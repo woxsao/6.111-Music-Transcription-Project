@@ -27,12 +27,19 @@ read_xdc ./xdc/top_level.xdc
 # set the part number so Vivado knows how to build (each FPGA is different)
 set_part $partNum
 
-# I think you need to read in each IP separately. blah oh well.
-#read_ip ./ip/xfft_0/xfft_0.xci
-#read_ip ./ip/cordic_0/cordic_0.xci
-#read_ip ./ip/axis_data_fifo_0/axis_data_fifo_0.xci
-#generate_target all [get_ips]
-#synth_ip [get_ips]
+# Read in all IP
+#read_ip ./ip/clk_wiz_7425/clk_wiz_7425.xci
+read_ip ./ip/clk_wiz_69632/clk_wiz_69632.xci
+#read_ip ./ip/clk_wiz_139264/clk_wiz_139264.xci
+read_ip ./ip/fir_compiler_10taps_69632clk/fir_compiler_10taps_69632clk.xci
+#read_ip ./ip/fir_compiler_10taps_139264clk/fir_compiler_10taps_139264clk.xci
+#read_ip ./ip/fir_compiler_30taps_69632clk/fir_compiler_10taps_69632clk.xci
+#read_ip ./ip/fir_compiler_30taps_139264clk/fir_compiler_10taps_139264clk.xci
+#read_ip ./ip/fir_compiler_60taps_69632clk/fir_compiler_10taps_69632clk.xci
+#read_ip ./ip/fir_compiler_60taps_139264clk/fir_compiler_10taps_139264clk.xci
+
+generate_target all [get_ips]
+synth_ip [get_ips]
 
 #Run Synthesis
 synth_design -top top_level -part $partNum -verbose

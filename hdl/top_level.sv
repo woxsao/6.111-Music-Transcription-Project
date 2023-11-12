@@ -21,13 +21,25 @@ module top_level(
   assign sys_rst = btn[0];
 
   logic clk_m;
-  audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
-  // we make 98.3 MHz since that number is cleanly divisible by
-  // 32 to give us 3.072 MHz.  3.072 MHz is nice because it is cleanly divisible
-  // by nice powers of 2 to give us reasonable audio sample rates. For example,
-  // a decimation by a factor of 64 could give us 6 bit 48 kHz audio
-  // a decimation by a factor of 256 gives us 8 bit 12 kHz audio
-  //we do the latter in this lab.
+  logic fir_input_valid;
+  logic fir_output_ready;
+  logic fir_ready_for_input;
+  assign fir_ready_for_input = 1;
+  logic [31:0] fir_output_data;
+  //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
+  logic clk_locked;
+  clk_wiz_69632 macw (.reset(sys_rst),
+                      .clk_in1(clk_100mhz),
+                      .clk_out1(clk_m),
+                      .locked(clk_locked)
+                    ); //69.632 MHz
+  fir_compiler_10taps_69632clk fir (.aclk(clk_m),
+                                    .s_axis_data_tvalid(fir_input_valid),
+                                    .s_axis_data_tdata({8'b0, mic_audio}),
+                                    .s_axis_data_tready(fir_ready_for_input),
+                                    .m_axis_data_tvalid(fir_output_ready), //fir ready for an input 
+                                    .m_axis_data_tdata(fir_output_data)
+                                    );
 
 
   logic record; //signal used to trigger recording
@@ -74,7 +86,19 @@ module top_level(
     old_mic_clk <= mic_clk;
   end
   //generate audio signal (samples at ~12 kHz
+  logic [3:0] audio_counter;
   always_ff @(posedge clk_m)begin
+    if(audio_counter < 8)begin
+      audio_counter <= audio_counter + 1;
+      fir_input_valid <= 1;
+      mic_audio[audio_counter] <= mic_data;
+    end
+    else begin
+      audio_counter <= 0;
+      fir_input_valid <= 0;
+    end
+  end
+  /*always_ff @(posedge clk_m)begin
     if (pdm_signal_valid)begin
       sampled_mic_data    <= mic_data;
       pdm_counter         <= (pdm_counter==NUM_PDM_SAMPLES)?0:pdm_counter + 1;
@@ -86,7 +110,7 @@ module top_level(
     end else begin
       audio_sample_valid <= 0;
     end
-  end
+  end*/
 
   logic [7:0] tone_750; //output of sine wave of 750Hz
   logic [7:0] tone_440; //output of sine wave of 440 Hz

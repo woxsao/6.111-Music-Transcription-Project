@@ -4,7 +4,7 @@
     "xci_name": "clk_wiz_139264",
     "component_reference": "xilinx.com:ip:clk_wiz:6.0",
     "ip_revision": "12",
-    "gen_directory": "../../../../final_project_ip.gen/sources_1/ip/clk_wiz_139264",
+    "gen_directory": "./ip/clk_wiz_139264",
     "parameters": {
       "component_parameters": {
         "Component_Name": [ { "value": "clk_wiz_139264", "resolve_type": "user", "usage": "all" } ],
@@ -599,7 +599,7 @@
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
         "IPREVISION": [ { "value": "12" } ],
         "MANAGED": [ { "value": "TRUE" } ],
-        "OUTPUTDIR": [ { "value": "../../../../final_project_ip.gen/sources_1/ip/clk_wiz_139264" } ],
+        "OUTPUTDIR": [ { "value": "./ip/clk_wiz_139264" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
         "SWVERSION": [ { "value": "2023.1" } ],
