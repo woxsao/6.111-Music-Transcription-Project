@@ -1,10 +1,13 @@
+`timescale 1ns / 1ps
+`default_nettype none // prevents system from inferring an undeclared logic (good practice)
+
 module hanning_window #(
     parameter DATA_WIDTH = 8,
     parameter SAMPLE_COUNT = 4096
 )(
-    input logic clk_in,
-    input logic rst_in,
-    input logic [DATA_WIDTH-1:0] in_sample,
+    input wire clk_in,
+    input wire rst_in,
+    input wire [DATA_WIDTH-1:0] in_sample,
     output logic [DATA_WIDTH-1:0] out_sample,
     output real cosout
 );
@@ -35,3 +38,5 @@ module hanning_window #(
     end
 
 endmodule
+
+`default_nettype wire
