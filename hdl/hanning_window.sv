@@ -9,7 +9,8 @@ module hanning_window #(
     input wire rst_in,
     input wire [DATA_WIDTH-1:0] in_sample,
     output logic [DATA_WIDTH-1:0] out_sample,
-    output real cosout
+    //output real cosout
+    output logic audio_sample_valid
 );
     // array where each element is data type logic and width 8, and there are 4096 elements
     //logic [DATA_WIDTH-1:0] window[SAMPLE_COUNT-1:0];
@@ -17,7 +18,7 @@ module hanning_window #(
     assign PI = 3.141592;
     logic [11:0] i;
 
-    //real cosout;
+    real cosout;
     //assign cosout = $cos((2*PI*in_sample/256))*100;
     assign cosout = 0.5 * (1 - $cos(2 * PI * i / (SAMPLE_COUNT - 1)));
     
