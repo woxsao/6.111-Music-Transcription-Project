@@ -24,10 +24,9 @@ module top_level(
   logic fir_input_valid;
   logic fir_output_ready;
   logic fir_ready_for_input;
-  logic [31:0] fir_output_data;
   //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
   logic clk_locked;
-  clk_wiz_69632 macw (.reset(sys_rst),
+  clk_wiz_139264 macw (.reset(sys_rst),
                       .clk_in1(clk_100mhz),
                       .clk_out1(clk_m),
                       .locked(clk_locked)
@@ -50,24 +49,13 @@ module top_level(
   //logic for interfacing with the microphone and generating 3.072 MHz signals
   logic [7:0] pdm_tally;
   logic [8:0] pdm_counter;
-  logic signed [7:0] fir_out;
-  logic signed [15:0] fir_in;
-  fir_compiler_30taps_69632clk fir (.aclk(clk_m),
-                                    .s_axis_data_tvalid(audio_sample_valid),
-                                    .s_axis_data_tdata((mic_audio > 0)?mic_audio:{8'b1111_1111, mic_audio}),
-                                    .s_axis_data_tready(fir_ready_for_input),
-                                    .m_axis_data_tvalid(fir_output_ready), //fir ready for an input 
-                                    .m_axis_data_tdata(fir_output_data)
-                                    );
-  always_ff @(posedge clk_m)begin
-    if(fir_output_ready)begin
-      fir_out <= (fir_output_data>>>8)>>>sw[12:10];
-    end
-    if(fir_ready_for_input)
-      fir_in <= (mic_audio > 0)?mic_audio:{8'b1111_1111, mic_audio};
-    //fir_in <= (mic_audio > 0)? {8'b0, mic_audio}:{8'b1111_1111, mic_audio};
+  logic [7:0] fir_out;
+  logic signed [7:0] fir_in;
 
-  end
+  fir_filter fir(.audio_in(sampled_mic_data),
+                .clk_in(clk_m),
+                .filtered_audio(fir_out));
+
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
 
@@ -100,11 +88,8 @@ module top_level(
     if (pdm_signal_valid)begin
       sampled_mic_data    <= mic_data;
       pdm_counter         <= (pdm_counter==NUM_PDM_SAMPLES)?0:pdm_counter + 1;
-      pdm_tally           <= (pdm_counter==NUM_PDM_SAMPLES)?mic_data
-                                                            :pdm_tally+mic_data;
       audio_sample_valid  <= (pdm_counter==NUM_PDM_SAMPLES);
-      mic_audio           <= (pdm_counter==NUM_PDM_SAMPLES)?{~pdm_tally[7],pdm_tally[6:0]}
-                                                            :mic_audio;
+      mic_audio           <= fir_out;
     end else begin
       audio_sample_valid <= 0;
     end
@@ -127,24 +112,11 @@ module top_level(
                 .rst_in(sys_rst),
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
-  recorder my_recorder(
-    .clk_in(clk_m), //system clock
-    .rst_in(sys_rst),//global reset
-    .record_in(record), //button indicating whether to record or not
-    .audio_valid_in(fir_output_ready), //12 kHz audio sample valid signal
-    .audio_in(fir_out), //8 bit signed data from microphone
-    //.audio_valid_in(audio_sample_valid),
-    //.audio_in(mic_audio),
-    .single_out(single_audio), //played back audio (8 bit signed at 12 kHz)
-    .echo_out(echo_audio) //played back audio (8 bit signed at 12 kHz)
-  );
 
   recorder my_recorder2(
     .clk_in(clk_m), //system clock
     .rst_in(sys_rst),//global reset
     .record_in(record), //button indicating whether to record or not
-    //.audio_valid_in(fir_output_ready), //12 kHz audio sample valid signal
-    //.audio_in(fir_out), //8 bit signed data from microphone
     .audio_valid_in(audio_sample_valid),
     .audio_in(mic_audio),
     .single_out(single_audio2), //played back audio (8 bit signed at 12 kHz)
