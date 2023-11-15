@@ -14,16 +14,15 @@ module hanning_window #(
     input wire clk_in,
     input wire rst_in,
     input wire [DATA_WIDTH-1:0] in_sample,
-    output logic [7:0] out_sample,
-    //output real cosout
-    output logic audio_sample_valid
+    output logic signed [7:0] out_sample,
+    output logic signed audio_sample_valid
 );
     logic [11:0] coeff_addr;
-    logic [31:0] post_mult_shift;
+    logic signed [31:0] post_mult_shift;
 
-    logic [7:0] in_sample_pipe;
+    logic signed [7:0] in_sample_pipe;
 
-    logic [23:0] stored_coeff;
+    logic signed [23:0] stored_coeff;
 
     always_ff @(posedge clk_in) begin
         if (rst_in) begin

@@ -5,8 +5,8 @@ module hann_tb();
 
   logic clk_in;
   logic rst_in;
-  logic [7:0] in_sample;
-  logic [7:0] out_sample;
+  logic signed [7:0] in_sample;
+  logic signed [7:0] out_sample;
 
   hanning_window #(8,4096) uut (
     .clk_in(clk_in),
