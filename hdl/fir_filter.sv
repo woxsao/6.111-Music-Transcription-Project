@@ -59,9 +59,9 @@ module fir_filter #(
         else begin
             if (counter >= 32) begin
                 data_ready <= 1;
-                counter <= 0;
-                filtered_audio <= accumulator;//>>>5'b01010; // Assign filtered_audio after counter reaches 32
-                accumulator <= audio_in; // Reset accumulator after counter reaches 32
+                counter <= 1;
+                filtered_audio <= accumulator>>>5'b01010; // Assign filtered_audio after counter reaches 32
+                accumulator <= audio_in* COEFFICIENTS[0]; // Reset accumulator after counter reaches 32
             end else begin
                 data_ready <= 0;
                 accumulator <= accumulator + (audio_in * COEFFICIENTS[counter]); // Perform FIR operation here

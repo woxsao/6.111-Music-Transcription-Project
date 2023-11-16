@@ -10,8 +10,8 @@ module lpf_tb();
   logic fir_ready_for_input;
   logic fir_output_ready;
   logic [7:0] fir_out;
-  localparam PDM_COUNT_PERIOD = 32; //do not change
-  localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
+  localparam PDM_COUNT_PERIOD = 16; //do not change
+  localparam NUM_PDM_SAMPLES = 128; //number of pdm in downsample/decimation/average
   sine_generator_440 sine_440(.clk_in(clk_in),
                 .rst_in(sys_rst),
                 .step_in(audio_sample_valid),
