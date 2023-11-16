@@ -30,7 +30,7 @@ module top_level(
                       .clk_in1(clk_100mhz),
                       .clk_out1(clk_m),
                       .locked(clk_locked)
-                    ); //69.632 MHz
+                    ); //139.264 MHz
 
 
   logic record; //signal used to trigger recording
@@ -51,38 +51,30 @@ module top_level(
   logic [8:0] pdm_counter;
   logic [7:0] fir_out;
   logic signed [7:0] fir_in;
-
-  fir_filter fir(.audio_in(sampled_mic_data),
+  logic fir_ready;
+  fir_filter fir1(.audio_in(sampled_mic_data),
                 .clk_in(clk_m),
-                .filtered_audio(fir_out));
+                .filtered_audio(fir_out),
+                .data_ready(fir_ready));
 
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
 
   logic old_mic_clk; //prior mic clock for edge detection
   logic sampled_mic_data; //one bit grabbed/held values of mic
-  logic pdm_signal_valid; //single-cycle signal at 3.072 MHz indicating pdm steps
+  logic pdm_signal_valid; //single-cycle signal at 4.352 MHz indicating pdm steps
 
   assign pdm_signal_valid = mic_clk && ~old_mic_clk;
 
 
-  //logic to produce 25 MHz step signal for PWM module
-  logic [1:0] pwm_counter;
-  logic pwm_step; //single-cycle pwm step
-  assign pwm_step = (pwm_counter==2'b11);
-
-  always_ff @(posedge clk_m)begin
-    pwm_counter <= pwm_counter+1;
-  end
-
   //generate clock signal for microphone
-  //microphone signal at ~3.072 MHz
+  //microphone signal at ~4.352 MHz
   always_ff @(posedge clk_m)begin
     mic_clk <= m_clock_counter < PDM_COUNT_PERIOD/2;
     m_clock_counter <= (m_clock_counter==PDM_COUNT_PERIOD-1)?0:m_clock_counter+1;
     old_mic_clk <= mic_clk;
   end
-  //generate audio signal (samples at ~12 kHz
+  //generate audio signal (samples at ~17 kHz
   logic [3:0] audio_counter;
   always_ff @(posedge clk_m)begin
     if (pdm_signal_valid)begin
