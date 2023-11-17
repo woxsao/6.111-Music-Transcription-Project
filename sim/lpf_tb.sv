@@ -6,7 +6,7 @@ module lpf_tb();
   logic clk_in;
   logic sys_rst;
   logic audio_sample_valid;
-  logic [7:0] tone_440;
+  logic signed [7:0] tone_440;
   logic fir_ready_for_input;
   logic fir_output_ready;
   logic [7:0] fir_out;
@@ -19,6 +19,7 @@ module lpf_tb();
 
   fir_filter fir(.audio_in(tone_440),
                 .rst_in(sys_rst),
+                .valid_in(audio_sample_valid),
                 .clk_in(clk_in),
                 .filtered_audio(fir_out),
                 .data_ready(fir_output_ready));
