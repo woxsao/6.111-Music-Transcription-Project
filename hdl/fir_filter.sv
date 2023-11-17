@@ -15,9 +15,10 @@ module fir_filter #(
     //logic signed [(WIDTH+8)-1:0] accumulator;
     logic signed [50:0] accumulator;
     logic signed [WIDTH+8-1:0] COEFFICIENTS [0:31];
-    logic signed [WIDTH-1:0] delay_line [31:0];
-    logic signed [WIDTH-1:0] dbg;
-    logic signed [WIDTH-1:0] dbg2;
+    logic signed [WIDTH-1:0] delay_line [0:31];
+    logic signed [WIDTH-1:0] delay_line_counter;
+    logic signed [(WIDTH+8)-1:0] dbg2;
+    logic signed [WIDTH+8-1:0] coeff;
     integer i;
     logic multiply = 0;
     initial begin
@@ -60,11 +61,14 @@ module fir_filter #(
             counter <= 0;
             filtered_audio <= 0; // Assign filtered_audio after counter reaches 32
             accumulator <= 0; // Reset accumulator after counter reaches 32 
+            delay_line_counter <= 0;
+            dbg2 <= 0;
+            coeff <= 0;
         end 
         else begin
             if(valid_in) begin
                 delay_line[0] <= audio_in[7:0];
-                for(i = 1; i < 32; i = i+1)begin
+                for(i = 1; i < 32; i = i+1)begin //this breaks shit
                     delay_line[i] <= delay_line[i-1];
                 end
                 multiply <= 1;
@@ -81,8 +85,9 @@ module fir_filter #(
                 end
                 else begin
                     data_ready <= 0;
-                    dbg <= delay_line[counter];
-                    dbg2 <= COEFFICIENTS[counter];
+                    delay_line_counter <= delay_line[2];
+                    dbg2 <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
+                    coeff <= COEFFICIENTS[counter];
                     accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
                     counter <= counter + 1;
                 end
