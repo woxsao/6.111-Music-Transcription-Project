@@ -7,7 +7,7 @@ module fir_filter #(
     input wire signed [WIDTH-1:0] audio_in,
     input wire valid_in,
     input wire clk_in,
-    output logic signed [WIDTH-1:0] filtered_audio,
+    output logic signed [WIDTH:0] filtered_audio,
     output logic data_ready
 );
 
