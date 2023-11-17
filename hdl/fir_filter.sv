@@ -7,20 +7,20 @@ module fir_filter #(
     input wire signed [WIDTH-1:0] audio_in,
     input wire valid_in,
     input wire clk_in,
-    output logic [WIDTH-1:0] filtered_audio,
+    output logic signed [WIDTH-1:0] filtered_audio,
     output logic data_ready
 );
 
     logic [6:0] counter;
-    //logic signed [(WIDTH+8)-1:0] accumulator;
-    logic signed [50:0] accumulator;
-    logic signed [WIDTH+8-1:0] COEFFICIENTS [0:31];
-    logic signed [WIDTH-1:0] delay_line [0:31];
+    logic signed [(WIDTH+8)-1:0] accumulator;
+    //logic signed [50:0] accumulator;
+    logic signed [WIDTH+8-1:0] COEFFICIENTS [31:0];
+    logic signed [WIDTH-1:0] delay_line [31:0];
     logic signed [WIDTH-1:0] delay_line_counter;
     logic signed [(WIDTH+8)-1:0] dbg2;
     logic signed [WIDTH+8-1:0] coeff;
-    integer i;
-    logic multiply = 0;
+    logic signed [WIDTH-1:0] cur;
+    logic multiply;
     initial begin
         COEFFICIENTS[0] = -1;
         COEFFICIENTS[1] = -2;
@@ -53,7 +53,7 @@ module fir_filter #(
         COEFFICIENTS[28] = -2;
         COEFFICIENTS[29] = -2;
         COEFFICIENTS[30] = -1;
-
+        COEFFICIENTS[31] = 0;
     end
     always_ff @(posedge clk_in) begin
         if(rst_in)begin
@@ -64,13 +64,12 @@ module fir_filter #(
             delay_line_counter <= 0;
             dbg2 <= 0;
             coeff <= 0;
+            multiply <= 0;
         end 
         else begin
             if(valid_in) begin
                 delay_line[0] <= audio_in[7:0];
-                for(i = 1; i < 32; i = i+1)begin //this breaks shit
-                    delay_line[i] <= delay_line[i-1];
-                end
+                cur <= audio_in;
                 multiply <= 1;
                 counter <= 0;
                 accumulator <= 0;
@@ -85,9 +84,10 @@ module fir_filter #(
                 end
                 else begin
                     data_ready <= 0;
-                    delay_line_counter <= delay_line[2];
-                    dbg2 <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
-                    coeff <= COEFFICIENTS[counter];
+                    //delay_line_counter <= delay_line[30]; //debug line
+                    //dbg2 <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);//debug line
+                    //coeff <= COEFFICIENTS[counter]; //debug line
+                    delay_line[counter] <= (counter ==0) ? cur:delay_line[counter-1]; //circular shift
                     accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
                     counter <= counter + 1;
                 end
