@@ -14,8 +14,9 @@ module hanning_window #(
     input wire clk_in,
     input wire rst_in,
     input wire [DATA_WIDTH-1:0] in_sample,
+    input wire audio_sample_valid,
     output logic signed [7:0] out_sample,
-    output logic signed audio_sample_valid
+    output logic hanning_sample_valid
 );
     logic [11:0] coeff_addr;
     logic signed [31:0] post_mult_shift;
@@ -28,11 +29,17 @@ module hanning_window #(
         if (rst_in) begin
             out_sample <= 0;
             coeff_addr <= 0;
+            hanning_sample_valid <= 0;
         end else begin
-            coeff_addr <= coeff_addr+1;
-            in_sample_pipe <= in_sample;
-            post_mult_shift <= (stored_coeff * in_sample_pipe) >> 24;
-            out_sample <= post_mult_shift;
+            if (audio_sample_valid) begin
+                coeff_addr <= coeff_addr+1;
+                in_sample_pipe <= in_sample;
+                post_mult_shift <= (stored_coeff * in_sample_pipe) >> 24;
+                out_sample <= post_mult_shift;
+                hanning_sample_valid <= 1;
+            end else begin
+                hanning_sample_valid <= 0;
+            end
         end
         //out_sample <= $cos(2*PI*in_sample);
     end
@@ -47,7 +54,7 @@ module hanning_window #(
         .dina(0),       // RAM input data, width determined from RAM_WIDTH
         .clka(clk_in),       // Clock
         .wea(0),         // Write enable
-        .ena(1),         // RAM Enable, for additional power savings, disable port when not in use
+        .ena(audio_sample_valid),         // RAM Enable, for additional power savings, disable port when not in use
         .rsta(rst_in),       // Output reset (does not affect memory contents)
         .regcea(1),   // Output register enable
         .douta(stored_coeff)      // RAM output data, width determined from RAM_WIDTH

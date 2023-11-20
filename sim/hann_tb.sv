@@ -6,12 +6,14 @@ module hann_tb();
   logic clk_in;
   logic rst_in;
   logic signed [7:0] in_sample;
+  logic audio_sample_valid;
   logic signed [7:0] out_sample;
 
   hanning_window #(8,4096) uut (
     .clk_in(clk_in),
     .rst_in(rst_in),
     .in_sample(in_sample),
+    .audio_sample_valid(audio_sample_valid),
     .out_sample(out_sample)
 );
 
@@ -34,6 +36,12 @@ module hann_tb();
     rst_in = 0;
     for (int i = 0; i<4096; i=i+1)begin
       in_sample = i<<4;
+      // if (i%2==0) begin
+      //   audio_sample_valid = 1;
+      // end else begin
+      //   audio_sample_valid = 0;
+      // end
+      audio_sample_valid = 1;
       #10;
       end
     $display("Simulation finished");
