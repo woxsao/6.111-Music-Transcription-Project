@@ -24,13 +24,13 @@ module top_level(
   logic fir_input_valid;
   logic fir_output_ready;
   logic fir_ready_for_input;
-  //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
+  audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
   logic clk_locked;
-  clk_wiz_139264 macw (.reset(sys_rst),
-                      .clk_in1(clk_100mhz),
-                      .clk_out1(clk_m),
-                      .locked(clk_locked)
-                    ); //139.264 MHz
+  //clk_wiz_139264 macw (.reset(sys_rst),
+  //                    .clk_in1(clk_100mhz),
+  //                    .clk_out1(clk_m),
+  //                    .locked(clk_locked)
+  //                  ); //139.264 MHz
 
 
   logic record; //signal used to trigger recording
@@ -49,13 +49,46 @@ module top_level(
   //logic for interfacing with the microphone and generating 3.072 MHz signals
   logic [7:0] pdm_tally;
   logic [8:0] pdm_counter;
-  logic [7:0] fir_out;
-  logic signed [7:0] fir_in;
-  logic fir_ready;
-  fir_filter fir1(.audio_in(sampled_mic_data),
+
+  logic [15:0] dec1_out;
+  logic dec1_out_ready;
+  fir_filter #(16) fir1(.audio_in(sampled_mic_data?{8'b1111_1111}:8'b0),
+                .rst_in(sys_rst),
+                .valid_in(pdm_signal_valid),
                 .clk_in(clk_m),
-                .filtered_audio(fir_out),
-                .data_ready(fir_ready));
+                .filtered_audio(dec1_out),
+                .data_ready(dec1_out_ready));
+  /*fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
+                        .audio_in(mic_data?{8'b1111_1111}:0),
+                        .audio_sample_valid(audio_sample_valid),
+                        .clk_in(clk_m),
+                        .dec_output(dec1_out),
+                        .dec_output_ready(dec1_out_ready));
+  logic [15:0] dec2_out;
+  logic dec2_out_ready;
+  fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
+                        .audio_in(dec1_out),
+                        .audio_sample_valid(dec1_out_ready),
+                        .clk_in(clk_m),
+                        .dec_output(dec2_out),
+                        .dec_output_ready(dec2_out_ready));
+  logic [15:0] dec3_out;
+  logic dec3_out_ready;
+  fir_decimator #(16) fir_dec3(.rst_in(sys_rst),
+                        .audio_in(dec2_out),
+                        .audio_sample_valid(dec2_out_ready),
+                        .clk_in(clk_m),
+                        .dec_output(dec3_out),
+                        .dec_output_ready(dec3_out_ready));
+  logic [15:0] dec4_out;
+  logic dec4_out_ready;
+  fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
+                        .audio_in(dec3_out),
+                        .audio_sample_valid(dec3_out_ready),
+                        .clk_in(clk_m),
+                        .dec_output(dec4_out),
+                        .dec_output_ready(dec4_out_ready));
+  */
 
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
@@ -75,13 +108,15 @@ module top_level(
     old_mic_clk <= mic_clk;
   end
   //generate audio signal (samples at ~17 kHz
-  logic [3:0] audio_counter;
   always_ff @(posedge clk_m)begin
     if (pdm_signal_valid)begin
       sampled_mic_data    <= mic_data;
       pdm_counter         <= (pdm_counter==NUM_PDM_SAMPLES)?0:pdm_counter + 1;
+      pdm_tally           <= (pdm_counter==NUM_PDM_SAMPLES)?mic_data
+                                                            :pdm_tally+mic_data;
       audio_sample_valid  <= (pdm_counter==NUM_PDM_SAMPLES);
-      mic_audio           <= fir_out;
+      mic_audio           <= (pdm_counter==NUM_PDM_SAMPLES)?{~pdm_tally[7],pdm_tally[6:0]}
+                                                            :mic_audio;
     end else begin
       audio_sample_valid <= 0;
     end
@@ -109,8 +144,8 @@ module top_level(
     .clk_in(clk_m), //system clock
     .rst_in(sys_rst),//global reset
     .record_in(record), //button indicating whether to record or not
-    .audio_valid_in(audio_sample_valid),
-    .audio_in(mic_audio),
+    .audio_valid_in(dec1_out_ready),
+    .audio_in(dec1_out),
     .single_out(single_audio2), //played back audio (8 bit signed at 12 kHz)
     .echo_out(echo_audio2) //played back audio (8 bit signed at 12 kHz)
   );
@@ -131,7 +166,7 @@ module top_level(
     end else if (sw[7])begin
       audio_data_sel = single_audio2; //signed
     end else begin
-      audio_data_sel = fir_out; //signed
+      audio_data_sel = dec1_out; //signed
     end
   end
 

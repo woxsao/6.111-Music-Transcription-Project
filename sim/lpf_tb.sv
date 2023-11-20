@@ -12,21 +12,26 @@ module lpf_tb();
   logic [7:0] fir_out;
   localparam PDM_COUNT_PERIOD = 16; //do not change
   localparam NUM_PDM_SAMPLES = 128; //number of pdm in downsample/decimation/average
-  sine_generator_440 sine_440(.clk_in(clk_in),
+  sine_generator_440 sine_440(.clk_in(clk_m),
                 .rst_in(sys_rst),
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
 
-  fir_filter fir(.audio_in(tone_440),
+  fir_filter fir(.audio_in(mic_data?{8'b1111_1111}:8'b0),
                 .rst_in(sys_rst),
-                .valid_in(audio_sample_valid),
-                .clk_in(clk_in),
+                .valid_in(pdm_signal_valid),
+                .clk_in(clk_m),
                 .filtered_audio(fir_out),
                 .data_ready(fir_output_ready));
-
+  audio_clk_wiz macw (.clk_in(clk_in), .clk_out(clk_m)); //98.3MHz
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;
+  end
+  logic mic_data;
+  always begin
+    #1000;
+    mic_data = !mic_data;
   end
   logic old_mic_clk; //prior mic clock for edge detection
   logic sampled_mic_data; //one bit grabbed/held values of mic
@@ -39,12 +44,12 @@ module lpf_tb();
 
   //generate clock signal for microphone
   //microphone signal at ~4.352 MHz
-  always_ff @(posedge clk_in)begin
+  always_ff @(posedge clk_m)begin
     mic_clk <= m_clock_counter < PDM_COUNT_PERIOD/2;
     m_clock_counter <= (m_clock_counter==PDM_COUNT_PERIOD-1)?0:m_clock_counter+1;
     old_mic_clk <= mic_clk;
   end
-  always_ff @(posedge clk_in)begin
+  always_ff @(posedge clk_m)begin
     if (pdm_signal_valid)begin
       pdm_counter         <= (pdm_counter==NUM_PDM_SAMPLES)?0:pdm_counter + 1;
       audio_sample_valid  <= (pdm_counter==NUM_PDM_SAMPLES);
@@ -64,6 +69,7 @@ module lpf_tb();
     mic_clk = 0;
     m_clock_counter = 0;
     pdm_counter = 0;
+    mic_data = 0;
 
     //out_sample = 0;
     #10;
