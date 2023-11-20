@@ -21,11 +21,8 @@ module top_level(
   assign sys_rst = btn[0];
 
   logic clk_m;
-  logic fir_input_valid;
-  logic fir_output_ready;
-  logic fir_ready_for_input;
   audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
-  logic clk_locked;
+  //logic clk_locked;
   //clk_wiz_139264 macw (.reset(sys_rst),
   //                    .clk_in1(clk_100mhz),
   //                    .clk_out1(clk_m),
@@ -124,8 +121,6 @@ module top_level(
 
   logic [7:0] tone_750; //output of sine wave of 750Hz
   logic [7:0] tone_440; //output of sine wave of 440 Hz
-  logic [7:0] single_audio; //recorder non-echo output
-  logic [7:0] echo_audio; //recorder echo output
   logic [7:0] single_audio2; //recorder non-echo output
   logic [7:0] echo_audio2; //recorder echo output
 
@@ -161,8 +156,6 @@ module top_level(
       audio_data_sel = tone_440; //signed
     end else if (sw[5])begin
       audio_data_sel = mic_audio; //signed
-    end else if (sw[6])begin
-      audio_data_sel = single_audio; //signed
     end else if (sw[7])begin
       audio_data_sel = single_audio2; //signed
     end else begin

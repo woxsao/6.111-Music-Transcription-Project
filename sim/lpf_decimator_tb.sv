@@ -17,13 +17,6 @@ module lpf_tb();
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
 
-  //fir_decimator fir_dec(.rst_in(sys_rst),
-  //                      .audio_in(mic_data?8'b1111_1111:8'b0),
-  //                      .audio_sample_valid(pdm_signal_valid),
-  //                      .clk_in(clk_in),
-  //                      .dec_output(dec_out),
-  //                      .dec_output_ready(dec_output_ready));
-  //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
   fir_filter #(16) fir(.audio_in(mic_data?{8'b1111_1111}:8'b0),
                 .rst_in(sys_rst),
                 .valid_in(pdm_signal_valid),
