@@ -20,6 +20,10 @@ module fir_filter #(
     logic signed [WIDTH+8-1:0] coeff;
     logic signed [WIDTH-1:0] cur;
     logic multiply;
+    logic signed [23:0] accumulator_rounded;
+    logic signed [15:0] accumulator_rounded_shifted;
+    assign accumulator_rounded = (accumulator + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} });
+    assign accumulator_rounded_shifted = (accumulator_rounded > 0)? {2'b0,accumulator_rounded[23:10]}: {2'b11,accumulator_rounded[23:10]};
     initial begin
         COEFFICIENTS[0] = -1;
         COEFFICIENTS[1] = -2;
@@ -76,16 +80,18 @@ module fir_filter #(
             else if(multiply)begin
                 if(counter >= 29)begin
                     data_ready <= 1;
-                    filtered_audio <= accumulator;
+                    //accumulator_rounded <= accumulator[23:0] + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} };
+                    filtered_audio <= accumulator_rounded_shifted;
                     multiply <= 0;
                     accumulator <= 0;
                 end
                 else begin
                     data_ready <= 0;
-                    dbg2 <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);//debug line
+                    dbg2 <= (COEFFICIENTS[counter]*delay_line[counter]);//debug line
                     coeff <= COEFFICIENTS[counter]; //debug line
                     delay_line[counter] <= (counter ==0) ? cur:delay_line[counter-1]; //circular shift
                     accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
+                    //accumulator_rounded <= (accumulator + (COEFFICIENTS[counter]*delay_line[counter])) + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} };
                     counter <= counter + 1;
                 end
             end

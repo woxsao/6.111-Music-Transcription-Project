@@ -16,13 +16,38 @@ module lpf_tb();
                 .rst_in(sys_rst),
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
-
-  fir_filter #(16) fir(.audio_in(mic_data?{8'b1111_1111}:8'b0),
-                .rst_in(sys_rst),
-                .valid_in(pdm_signal_valid),
-                .clk_in(clk_in),
-                .filtered_audio(dec_out),
-                .data_ready(dec_output_ready));
+  logic [15:0] dec1_out;
+  logic dec1_out_ready;
+  fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
+                        .audio_in(mic_data?{8'b1111_1111}:8'b0),
+                        .audio_sample_valid(pdm_signal_valid),
+                        .clk_in(clk_in),
+                        .dec_output(dec1_out),
+                        .dec_output_ready(dec1_out_ready));
+  logic [15:0] dec2_out;
+  logic dec2_out_ready;
+  fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
+                        .audio_in(dec1_out),
+                        .audio_sample_valid(dec1_out_ready),
+                        .clk_in(clk_in),
+                        .dec_output(dec2_out),
+                        .dec_output_ready(dec2_out_ready));
+  logic [15:0] dec3_out;
+  logic dec3_out_ready;
+  fir_decimator #(16) fir_dec3(.rst_in(sys_rst),
+                        .audio_in(dec2_out),
+                        .audio_sample_valid(dec2_out_ready),
+                        .clk_in(clk_in),
+                        .dec_output(dec3_out),
+                        .dec_output_ready(dec3_out_ready));
+  logic [15:0] dec4_out;
+  logic dec4_out_ready;
+  fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
+                        .audio_in(dec3_out),
+                        .audio_sample_valid(dec3_out_ready),
+                        .clk_in(clk_in),
+                        .dec_output(dec4_out),
+                        .dec_output_ready(dec4_out_ready));
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;

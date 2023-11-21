@@ -18,12 +18,17 @@ module chained_dec_tb();
                 .amp_out(tone_440));
   logic [15:0] dec1_out;
   logic dec1_out_ready;
+  logic [15:0] preserved_dec1;
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
-                        .audio_in(mic_data?{8'b1111_1111}:8'b0),
+                        .audio_in(mic_data?16'b0000000001111111 : {16'b1111111110000001}),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_in),
                         .dec_output(dec1_out),
                         .dec_output_ready(dec1_out_ready));
+  always_ff @(posedge clk_in)begin
+    if(dec1_out_ready)
+        preserved_dec1 <= dec1_out;
+  end
   logic [15:0] dec2_out;
   logic dec2_out_ready;
   fir_decimator #(16) fir_dec2(.rst_in(sys_rst),

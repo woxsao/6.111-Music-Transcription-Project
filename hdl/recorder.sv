@@ -118,6 +118,3 @@ module  recorder(
 
 endmodule
 `default_nettype wire
-
-
-

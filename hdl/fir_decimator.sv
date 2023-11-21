@@ -14,8 +14,8 @@ module fir_decimator #(
     logic signed [7:0] fir_out;
     logic fir_ready;
     logic [3:0] counter;
-    logic [8:0] fir_output;
-    fir_filter fir1(.audio_in(audio_in),
+    logic [WIDTH:0] fir_output;
+    fir_filter#(WIDTH) fir1(.audio_in(audio_in),
                 .rst_in(rst_in),
                 .valid_in(audio_sample_valid),
                 .clk_in(clk_in),

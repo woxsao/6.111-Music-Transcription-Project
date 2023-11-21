@@ -49,18 +49,26 @@ module top_level(
 
   logic [15:0] dec1_out;
   logic dec1_out_ready;
+
+  logic [15:0] fir_out;
+  logic fir_out_ready; 
   fir_filter #(16) fir1(.audio_in(sampled_mic_data?{8'b1111_1111}:8'b0),
                 .rst_in(sys_rst),
                 .valid_in(pdm_signal_valid),
                 .clk_in(clk_m),
-                .filtered_audio(dec1_out),
-                .data_ready(dec1_out_ready));
-  /*fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
+                .filtered_audio(fir_out),
+                .data_ready(fir_out_ready));
+  fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
                         .audio_in(mic_data?{8'b1111_1111}:0),
-                        .audio_sample_valid(audio_sample_valid),
+                        .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_m),
                         .dec_output(dec1_out),
                         .dec_output_ready(dec1_out_ready));
+  logic [15:0] sampled_dec1;
+  always_ff @(posedge clk_m)begin
+    if(dec1_out_ready)
+      sampled_dec1 <= dec1_out;
+  end
   logic [15:0] dec2_out;
   logic dec2_out_ready;
   fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
@@ -85,7 +93,7 @@ module top_level(
                         .clk_in(clk_m),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
-  */
+  
 
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
@@ -139,8 +147,8 @@ module top_level(
     .clk_in(clk_m), //system clock
     .rst_in(sys_rst),//global reset
     .record_in(record), //button indicating whether to record or not
-    .audio_valid_in(dec1_out_ready),
-    .audio_in(dec1_out),
+    .audio_valid_in(dec4_out_ready),
+    .audio_in(dec4_out[15:8]),
     .single_out(single_audio2), //played back audio (8 bit signed at 12 kHz)
     .echo_out(echo_audio2) //played back audio (8 bit signed at 12 kHz)
   );
@@ -156,10 +164,12 @@ module top_level(
       audio_data_sel = tone_440; //signed
     end else if (sw[5])begin
       audio_data_sel = mic_audio; //signed
+    end else if (sw[6])begin
+      audio_data_sel = dec1_out;
     end else if (sw[7])begin
       audio_data_sel = single_audio2; //signed
     end else begin
-      audio_data_sel = dec1_out; //signed
+      audio_data_sel = dec4_out; //signed
     end
   end
 
