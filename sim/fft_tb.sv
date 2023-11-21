@@ -13,6 +13,7 @@ module fft_tb();
     logic fft_out_last;
     logic [31:0] fft_out_data;  
     logic signed [7:0] amp_out;
+    logic hanning_sample_valid;
 
     sine_generator_750 sine_inst(
         .clk_in(clk_in),
@@ -26,7 +27,8 @@ module fft_tb();
         .rst_in(rst_in),
         .in_sample(amp_out),
         .audio_sample_valid(audio_sample_valid),
-        .out_sample(in_sample)
+        .out_sample(in_sample),
+        .hanning_sample_valid(hanning_sample_valid)
     );
 
     fft fft_inst(
