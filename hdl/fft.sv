@@ -12,30 +12,30 @@ module fft (
     output logic fft_out_last,
     output logic [15:0] fft_out_data
     );
-
+  
     logic [15:0] fft_data; //ff_data (made way too large for purpose
     logic       fft_valid; //data valid from fft
     logic       fft_last; //last of the "frame" from fft
     logic [11:0] fft_data_counter;
 
     always_ff @(posedge clk_in)begin
-        if (rst_in) begin
-            fft_valid <= 0;
-            fft_data <=0;
-            fft_data_counter <= 0;
-            fft_last <= 0;
+	if (rst_in) begin
+	    fft_valid <= 0;
+	    fft_data <=0;
+	    fft_data_counter <= 0;
+	    fft_last <= 0;
             fft_out_data <= 0;
         end else begin
-            if (audio_sample_valid) begin
+       	    if (audio_sample_valid) begin
                 fft_valid = 1;
-                fft_data = {in_sample,8'b0}; //upper 8 is real, lower 8 is imaginary
+                fft_data = {8'b0,in_sample};
                 fft_data_counter <= fft_data_counter +1; //rollover-auto
                 fft_last <= fft_data_counter==4095;
-                fft_out_ready <= 1;
+		fft_out_ready <= 1;
             end else begin
                 fft_valid = 0;
             end
-        end
+	    end
     end
 
     xfft_140 my_fft ( .aclk(clk_in),

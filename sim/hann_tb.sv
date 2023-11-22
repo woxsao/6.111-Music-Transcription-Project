@@ -34,8 +34,8 @@ module hann_tb();
     rst_in = 1;
     #10;
     rst_in = 0;
-    for (int i = 0; i<4096; i=i+1)begin
-      in_sample = i<<4;
+    for (int i = -2048; i<2048; i=i+1)begin
+      in_sample = i<<<4;
       // if (i%2==0) begin
       //   audio_sample_valid = 1;
       // end else begin

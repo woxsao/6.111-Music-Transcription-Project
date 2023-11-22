@@ -11,21 +11,22 @@ module fft_tb();
     logic fft_out_ready;
     logic fft_out_valid;
     logic fft_out_last;
-    logic [31:0] fft_out_data;  
-    logic signed [7:0] amp_out;
+    logic [15:0] fft_out_data;  
+    logic signed [7:0] tone_750;
     logic hanning_sample_valid;
+    //logic [15:0] rand_data;
 
     sine_generator_750 sine_inst(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .step_in(audio_sample_valid),
-        .amp_out(amp_out)
+        .amp(tone_750)
     ); 
 
-    hanning_window #(8,4096) uut (
+    hanning_window #(8,4096) hann_inst (
         .clk_in(clk_in),
         .rst_in(rst_in),
-        .in_sample(amp_out),
+        .in_sample(tone_750-128),
         .audio_sample_valid(audio_sample_valid),
         .out_sample(in_sample),
         .hanning_sample_valid(hanning_sample_valid)
@@ -35,7 +36,7 @@ module fft_tb();
         .clk_in(clk_in),
         .rst_in(rst_in),
         .in_sample(in_sample),
-        .audio_sample_valid(audio_sample_valid),
+        .audio_sample_valid(hanning_sample_valid),
         .fft_ready(fft_ready),
         .fft_out_ready(fft_out_ready),
         .fft_out_valid(fft_out_valid),
@@ -49,7 +50,7 @@ module fft_tb();
   end
   //initial block...this is our test simulation
   initial begin
-    $dumpfile("fft_tb.vcd"); //file to store value change dump (vcd)
+    $dumpfile("dump.vcd"); //file to store value change dump (vcd)
     $dumpvars(0,fft_tb);
     $display("Starting Sim"); //print nice message at start
     clk_in = 0;
@@ -58,15 +59,17 @@ module fft_tb();
     rst_in = 1;
     #10;
     rst_in = 0;
-    for (int i = 0; i<4096; i=i+1)begin
+    in_sample = 0;
+    //rand_data = 0;
+    for (int i = 0; i<15000; i=i+1)begin
       audio_sample_valid = 1;
       #10;
+      audio_sample_valid = 0;
+      #500;
+      //rand_data <= 16'h9F15;
       end
     $display("Simulation finished");
     $finish;
   end
-    
-
-  
 
 endmodule

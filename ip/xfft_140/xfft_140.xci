@@ -16,7 +16,7 @@
         "run_time_configurable_transform_length": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
         "data_format": [ { "value": "fixed_point", "resolve_type": "user", "usage": "all" } ],
         "input_width": [ { "value": "8", "value_src": "user", "resolve_type": "user", "usage": "all" } ],
-        "phase_factor_width": [ { "value": "16", "resolve_type": "user", "usage": "all" } ],
+        "phase_factor_width": [ { "value": "8", "resolve_type": "user", "usage": "all" } ],
         "scaling_options": [ { "value": "scaled", "resolve_type": "user", "usage": "all" } ],
         "rounding_modes": [ { "value": "truncation", "resolve_type": "user", "usage": "all" } ],
         "aclken": [ { "value": "false", "resolve_type": "user", "format": "bool", "usage": "all" } ],
