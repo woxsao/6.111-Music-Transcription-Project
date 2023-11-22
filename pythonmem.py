@@ -30,8 +30,8 @@ def generate_mem():
         hex_pre = hex(scaled)
         #print(hex_pre)
         hex_str = str(hex_pre)
-        if len(hex_str[2:]) < 6:
-            hex_str = '0'*(6-len(hex_str[2:])) + hex_str[2:]
+        if len(hex_str[2:]) < 7:
+            hex_str = '0'*(7-len(hex_str[2:])) + hex_str[2:]
         else:
             hex_str = hex_str[2:]
         print(hex_str)
