@@ -20,15 +20,12 @@ module chained_dec_tb();
   logic dec1_out_ready;
   logic [15:0] preserved_dec1;
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
-                        .audio_in(mic_data?16'b0000000001111111 : {16'b1111111110000001}),
+    //{16'b1111111110000001}
+                        .audio_in(mic_data?16'b0000000100000000 : 16'b0),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_in),
                         .dec_output(dec1_out),
                         .dec_output_ready(dec1_out_ready));
-  always_ff @(posedge clk_in)begin
-    if(dec1_out_ready)
-        preserved_dec1 <= dec1_out;
-  end
   logic [15:0] dec2_out;
   logic dec2_out_ready;
   fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
@@ -53,13 +50,14 @@ module chained_dec_tb();
                         .clk_in(clk_in),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
+
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;
   end
   logic mic_data;
   always begin
-    #10000;
+    #100;
     mic_data = !mic_data;
   end
   logic old_mic_clk; //prior mic clock for edge detection

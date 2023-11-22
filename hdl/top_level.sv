@@ -50,51 +50,68 @@ module top_level(
   logic [15:0] dec1_out;
   logic dec1_out_ready;
 
-  logic [15:0] fir_out;
+  logic signed [15:0] fir_out;
   logic fir_out_ready; 
-  fir_filter #(16) fir1(.audio_in(sampled_mic_data?{8'b1111_1111}:8'b0),
-                .rst_in(sys_rst),
-                .valid_in(pdm_signal_valid),
-                .clk_in(clk_m),
-                .filtered_audio(fir_out),
-                .data_ready(fir_out_ready));
-  fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
-                        .audio_in(mic_data?{8'b1111_1111}:0),
+
+  /*fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
+                        .audio_in(mic_data?16'b0000000001111111 : {16'b0}),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_m),
                         .dec_output(dec1_out),
                         .dec_output_ready(dec1_out_ready));
-  logic [15:0] sampled_dec1;
-  always_ff @(posedge clk_m)begin
-    if(dec1_out_ready)
-      sampled_dec1 <= dec1_out;
-  end
-  logic [15:0] dec2_out;
+  */
+  fir_filter #(16) fir1(.audio_in(mic_data?16'b0000000001111111 : {16'b0}),
+                .rst_in(sys_rst),
+                .valid_in(pdm_signal_valid),
+                .clk_in(clk_m),
+                .filtered_audio(dec1_out),
+                .data_ready(dec1_out_ready));
+  logic signed [15:0] dec2_out;
   logic dec2_out_ready;
-  fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
+  /*fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
                         .audio_in(dec1_out),
                         .audio_sample_valid(dec1_out_ready),
                         .clk_in(clk_m),
                         .dec_output(dec2_out),
                         .dec_output_ready(dec2_out_ready));
-  logic [15:0] dec3_out;
+  */
+  fir_filter #(16) fir2(.audio_in(dec1_out),
+                .rst_in(sys_rst),
+                .valid_in(dec1_out_ready),
+                .clk_in(clk_m),
+                .filtered_audio(dec2_out),
+                .data_ready(dec2_out_ready));
+  logic signed [15:0] dec3_out;
   logic dec3_out_ready;
+  /*
   fir_decimator #(16) fir_dec3(.rst_in(sys_rst),
                         .audio_in(dec2_out),
                         .audio_sample_valid(dec2_out_ready),
                         .clk_in(clk_m),
                         .dec_output(dec3_out),
-                        .dec_output_ready(dec3_out_ready));
-  logic [15:0] dec4_out;
+                        .dec_output_ready(dec3_out_ready));*/
+  fir_filter #(16) fir3(.audio_in(dec2_out),
+                .rst_in(sys_rst),
+                .valid_in(dec2_out_ready),
+                .clk_in(clk_m),
+                .filtered_audio(dec3_out),
+                .data_ready(dec3_out_ready));
+  logic signed [15:0] dec4_out;
   logic dec4_out_ready;
-  fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
+  /*fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
                         .audio_in(dec3_out),
                         .audio_sample_valid(dec3_out_ready),
                         .clk_in(clk_m),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
+  */
+  fir_filter #(16) fir4(.audio_in(dec3_out),
+                .rst_in(sys_rst),
+                .valid_in(dec3_out_ready),
+                .clk_in(clk_m),
+                .filtered_audio(dec4_out),
+                .data_ready(dec4_out_ready));
   
-
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
 
@@ -147,8 +164,8 @@ module top_level(
     .clk_in(clk_m), //system clock
     .rst_in(sys_rst),//global reset
     .record_in(record), //button indicating whether to record or not
-    .audio_valid_in(dec4_out_ready),
-    .audio_in(dec4_out[15:8]),
+    .audio_valid_in(fir_output_ready),
+    .audio_in(sampled_fir_output[15:8]),
     .single_out(single_audio2), //played back audio (8 bit signed at 12 kHz)
     .echo_out(echo_audio2) //played back audio (8 bit signed at 12 kHz)
   );
@@ -156,20 +173,47 @@ module top_level(
 
   //choose which signal to play:
   logic [15:0] audio_data_sel;
-
+  logic [15:0] sampled_dec1;
+  logic [15:0] sampled_dec2;
+  logic [15:0] sampled_dec3;
+  logic [15:0] sampled_dec4;
+  always_ff @(posedge clk_m)begin
+    if(dec1_out_ready)
+      sampled_dec1 <= dec1_out;
+    if(dec2_out_ready)
+      sampled_dec2 <= dec2_out;
+    if(dec3_out_ready)
+      sampled_dec3 <= dec3_out;
+    if(dec4_out_ready)
+      sampled_dec4 <= dec4_out;
+  end
+  logic [9:0] fir_counter;
+  logic signed [15:0] sampled_fir_output;
+  logic fir_output_ready;
+  always_ff @(posedge clk_m)begin
+    if(fir_counter >= 255)begin
+      sampled_fir_output <= sampled_dec4;
+      fir_counter <= 0;
+      fir_output_ready <= 1;
+    end
+    else begin
+      fir_counter <= fir_counter + 1;
+      fir_output_ready <= 0;
+    end
+  end
   always_comb begin
     if          (sw[0])begin
       audio_data_sel = tone_750; //signed
     end else if (sw[1])begin
       audio_data_sel = tone_440; //signed
     end else if (sw[5])begin
-      audio_data_sel = mic_audio; //signed
+      audio_data_sel = sampled_dec1; //signed
     end else if (sw[6])begin
-      audio_data_sel = dec1_out;
+      audio_data_sel = sampled_dec2;
     end else if (sw[7])begin
       audio_data_sel = single_audio2; //signed
     end else begin
-      audio_data_sel = dec4_out; //signed
+      audio_data_sel = sampled_fir_output; //signed
     end
   end
 

@@ -18,7 +18,7 @@ module pdm(
     else begin
       if(tick_in)begin
         count <= level_in + count - (count[8]?-128:127);
-        pdm_out <= count[8];
+        pdm_out <= ~count[8];
       end
     end
   end
