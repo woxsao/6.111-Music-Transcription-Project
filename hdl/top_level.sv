@@ -213,7 +213,7 @@ module top_level(
     end else if (sw[7])begin
       audio_data_sel = single_audio2; //signed
     end else begin
-      audio_data_sel = sampled_fir_output; //signed
+      audio_data_sel = sampled_dec4; //signed
     end
   end
 

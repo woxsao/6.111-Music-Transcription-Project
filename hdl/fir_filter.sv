@@ -14,8 +14,8 @@ module fir_filter #(
     logic [6:0] counter;
     logic signed [(WIDTH+8)-1:0] accumulator;
     //logic signed [50:0] accumulator;
-    logic signed [WIDTH+8-1:0] COEFFICIENTS [31:0];
-    logic signed [WIDTH-1:0] delay_line [31:0];
+    logic signed [WIDTH+8-1:0] COEFFICIENTS [28:0];
+    logic signed [WIDTH-1:0] delay_line [28:0];
     logic signed [(WIDTH+8)-1:0] dbg2;
     logic signed [WIDTH+8-1:0] coeff;
     logic signed [WIDTH-1:0] cur;
@@ -25,35 +25,36 @@ module fir_filter #(
     assign accumulator_rounded = ((accumulator) + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} });
     assign accumulator_rounded_shifted = (accumulator_rounded > 0)? {7'b0,accumulator_rounded[23:15]}: {7'b1111111,accumulator_rounded[23:15]};
     initial begin
-        COEFFICIENTS[0] = 208;
-        COEFFICIENTS[1] = 136;
-        COEFFICIENTS[2] = 55;
-        COEFFICIENTS[3] = -145;
-        COEFFICIENTS[4] = -438;
-        COEFFICIENTS[5] = -739;
-        COEFFICIENTS[6] = -913;
-        COEFFICIENTS[7] = -812;
-        COEFFICIENTS[8] = -317;
-        COEFFICIENTS[9] = 603;
-        COEFFICIENTS[10] = 1869;
-        COEFFICIENTS[11] = 3285;
-        COEFFICIENTS[12] = 4588;
-        COEFFICIENTS[13] = 5505;
-        COEFFICIENTS[14] = 5836;
-        COEFFICIENTS[15] = 5505;
-        COEFFICIENTS[16] = 4588;
-        COEFFICIENTS[17] = 3285;
-        COEFFICIENTS[18] = 1869;
-        COEFFICIENTS[19] = 603;
-        COEFFICIENTS[20] = -317;
-        COEFFICIENTS[21] = -812;
-        COEFFICIENTS[22] = -913;
-        COEFFICIENTS[23] = -739;
-        COEFFICIENTS[24] = -438;
-        COEFFICIENTS[25] = -145;
-        COEFFICIENTS[26] = 55;
-        COEFFICIENTS[27] = 136;
-        COEFFICIENTS[28] = 208;
+        COEFFICIENTS[0] = 42;
+        COEFFICIENTS[1] = -70;
+        COEFFICIENTS[2] = -206;
+        COEFFICIENTS[3] = -415;
+        COEFFICIENTS[4] = -652;
+        COEFFICIENTS[5] = -833;
+        COEFFICIENTS[6] = -853;
+        COEFFICIENTS[7] = -603;
+        COEFFICIENTS[8] = -18;
+        COEFFICIENTS[9] = 904;
+        COEFFICIENTS[10] = 2074;
+        COEFFICIENTS[11] = 3325;
+        COEFFICIENTS[12] = 4443;
+        COEFFICIENTS[13] = 5218;
+        COEFFICIENTS[14] = 5495;
+        COEFFICIENTS[15] = 5218;
+        COEFFICIENTS[16] = 4443;
+        COEFFICIENTS[17] = 3325;
+        COEFFICIENTS[18] = 2074;
+        COEFFICIENTS[19] = 904;
+        COEFFICIENTS[20] = -18;
+        COEFFICIENTS[21] = -603;
+        COEFFICIENTS[22] = -853;
+        COEFFICIENTS[23] = -833;
+        COEFFICIENTS[24] = -652;
+        COEFFICIENTS[25] = -415;
+        COEFFICIENTS[26] = -206;
+        COEFFICIENTS[27] = -70;
+        COEFFICIENTS[28] = 42;
+
 
     end
     always_ff @(posedge clk_in) begin
@@ -67,7 +68,7 @@ module fir_filter #(
             multiply <= 0;
         end 
         else begin
-            if(valid_in) begin
+            if(valid_in && !multiply) begin
                 delay_line[0] <= audio_in;
                 cur <= audio_in;
                 multiply <= 1;
@@ -80,7 +81,7 @@ module fir_filter #(
                     data_ready <= 1;
                     //accumulator_rounded <= accumulator[23:0] + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} };
                     filtered_audio <= accumulator_rounded_shifted;
-                    //filtered_audio <= accumulator[15:0];
+                    //filtered_audio <= accumulator[7:0];
                     multiply <= 0;
                     accumulator <= 0;
                 end
@@ -88,8 +89,8 @@ module fir_filter #(
                     data_ready <= 0;
                     dbg2 <= (COEFFICIENTS[counter]*delay_line[counter]);//debug line
                     coeff <= COEFFICIENTS[counter]; //debug line
-                    delay_line[counter] <= (counter ==0) ? cur:delay_line[counter-1]; //circular shift
-                    accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
+                    delay_line[counter] <= (counter ==0) ? delay_line[0]:delay_line[counter-1]; //circular shift
+                    accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[28-counter]);
                     counter <= counter + 1;
                 end
             end

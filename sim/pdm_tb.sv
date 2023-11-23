@@ -10,6 +10,8 @@ module chained_dec_tb();
   logic fir_ready_for_input;
   logic dec_output_ready;
   logic signed [15:0] dec_out;
+  logic signed [7:0] level_in;
+  logic tick_in;
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
   logic pdm_out;
@@ -28,41 +30,29 @@ module chained_dec_tb();
   logic dec1_out_ready;
   logic [15:0] preserved_dec1;
 
-/*
-  logic fir_ready;
-  logic [15:0] fir_output;
-  fir_filter #(16) fir1(.audio_in(pdm_out?16'b0000000001111111:16'b1111111110000001),
-                .rst_in(sys_rst),
-                .valid_in(pdm_signal_valid),
-                .clk_in(clk_in),
-                .filtered_audio(fir_output),
-                .data_ready(fir_ready));
+  logic fake_pdm_signal_valid;
+  logic [10:0] fake_counter;
 
-  logic fir_ready2;
-  logic [15:0] fir_output2;
-  fir_filter #(16) fir2(.audio_in(fir_output),
-                .rst_in(sys_rst),
-                .valid_in(fir_ready),
-                .clk_in(clk_in),
-                .filtered_audio(fir_output2),
-                .data_ready(fir_ready2));
-  logic fir_ready3;
-  logic [15:0] fir_output3;
-  fir_filter #(16) fir3(.audio_in(fir_output2),
-                .rst_in(sys_rst),
-                .valid_in(fir_ready2),
-                .clk_in(clk_in),
-                .filtered_audio(fir_output3),
-                .data_ready(fir_ready3));
-  logic fir_ready4;
-  logic [15:0] fir_output4;
-  fir_filter #(16) fir4(.audio_in(fir_output3),
-                .rst_in(sys_rst),
-                .valid_in(fir_ready3),
-                .clk_in(clk_in),
-                .filtered_audio(fir_output4),
-                .data_ready(fir_ready4));
-  */
+  logic fir_ready;
+  //logic signed [15:0] fir_output;
+  //logic signed [15:0] fir_truncated;
+  //fir_filter #(16) fir1(.audio_in(sampled_mic_data?16'b0000000001111111:16'b1111111110000001),
+  //              .rst_in(sys_rst),
+  //              .valid_in(pdm_signal_valid),
+  //              .clk_in(clk_in),
+  //              .filtered_audio(fir_output),
+  //              .data_ready(fir_ready));
+  //always_ff @(posedge clk_in)begin
+  //      if(fake_counter >= 16)begin
+  //          fake_counter <= 0;
+  //          fir_truncated <= fir_output;
+  //      end
+  //      else begin
+  //          if(fir_ready)begin
+  //              fake_counter <= fake_counter + 1;
+  //          end
+  //      end
+  //end
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
     //{16'b1111111110000001}
     //?16'b0000000100000000 : 16'b0
@@ -95,6 +85,7 @@ module chained_dec_tb();
                         .clk_in(clk_in),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
+
   logic signed [15:0] sampled_dec4_out;
   always_ff @(posedge clk_in)begin
     if(dec4_out_ready)begin
@@ -159,13 +150,42 @@ module chained_dec_tb();
     pdm_tally = 0;
     mic_audio = 0;
     pdm_val = 0;
-    fir_counter_val <= 0;
+    fir_counter_val = 0;
+    fake_counter = 0;
+    fake_pdm_signal_valid = 0;
     //out_sample = 0;
     #10;
     sys_rst = 1;
     #10;
     sys_rst = 0;
-    #1000000;
+    #4000000;
+    /*for (int i = 0; i<128; i=i+1)begin
+      level_in = i;
+      for (int j = 0; j<30; j=j+1)begin
+        tick_in = 1;
+        #10;
+        tick_in = 0;
+        #10;
+      end
+    end
+    for (int i = 127; i>=-128; i=i-1)begin
+      level_in = i;
+      for (int j = 0; j<30; j=j+1)begin
+        tick_in = 1;
+        #10;
+        tick_in = 0;
+        #10;
+      end
+    end
+    for (int i = -128; i<0; i=i+1)begin
+      level_in = i;
+      for (int j = 0; j<30; j=j+1)begin
+        tick_in = 1;
+        #10;
+        tick_in = 0;
+        #10;
+      end
+    end*/
     $display("Simulation finished");
     $finish;
   end
