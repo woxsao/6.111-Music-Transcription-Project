@@ -69,7 +69,7 @@ module fir_filter #(
         end 
         else begin
             if(valid_in && !multiply) begin
-                delay_line[0] <= audio_in;
+                delay_line[28] <= audio_in;
                 cur <= audio_in;
                 multiply <= 1;
                 counter <= 0;
@@ -89,8 +89,9 @@ module fir_filter #(
                     data_ready <= 0;
                     dbg2 <= (COEFFICIENTS[counter]*delay_line[counter]);//debug line
                     coeff <= COEFFICIENTS[counter]; //debug line
-                    delay_line[counter] <= (counter ==0) ? delay_line[0]:delay_line[counter-1]; //circular shift
-                    accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[28-counter]);
+                    delay_line[counter] <= (counter ==28) ? delay_line[28]:delay_line[counter+1]; //circular shift
+                    //accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[28-counter]);
+                    accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
                     counter <= counter + 1;
                 end
             end

@@ -34,25 +34,6 @@ module chained_dec_tb();
   logic [10:0] fake_counter;
 
   logic fir_ready;
-  //logic signed [15:0] fir_output;
-  //logic signed [15:0] fir_truncated;
-  //fir_filter #(16) fir1(.audio_in(sampled_mic_data?16'b0000000001111111:16'b1111111110000001),
-  //              .rst_in(sys_rst),
-  //              .valid_in(pdm_signal_valid),
-  //              .clk_in(clk_in),
-  //              .filtered_audio(fir_output),
-  //              .data_ready(fir_ready));
-  //always_ff @(posedge clk_in)begin
-  //      if(fake_counter >= 16)begin
-  //          fake_counter <= 0;
-  //          fir_truncated <= fir_output;
-  //      end
-  //      else begin
-  //          if(fir_ready)begin
-  //              fake_counter <= fake_counter + 1;
-  //          end
-  //      end
-  //end
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
     //{16'b1111111110000001}
     //?16'b0000000100000000 : 16'b0
@@ -86,12 +67,7 @@ module chained_dec_tb();
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
 
-  logic signed [15:0] sampled_dec4_out;
-  always_ff @(posedge clk_in)begin
-    if(dec4_out_ready)begin
-        sampled_dec4_out <= dec4_out;
-    end
-  end
+
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;
@@ -133,6 +109,20 @@ module chained_dec_tb();
     end else begin
         audio_sample_valid <= 0;
     end
+  end
+  logic [15:0] sampled_dec1;
+  logic [15:0] sampled_dec2;
+  logic [15:0] sampled_dec3;
+  logic [15:0] sampled_dec4;
+  always_ff @(posedge clk_in)begin
+    if(dec1_out_ready)
+      sampled_dec1 <= dec1_out;
+    if(dec2_out_ready)
+      sampled_dec2 <= dec2_out;
+    if(dec3_out_ready)
+      sampled_dec3 <= dec3_out;
+    if(dec4_out_ready)
+      sampled_dec4 <= dec4_out;
   end
   //initial block...this is our test simulation
   initial begin

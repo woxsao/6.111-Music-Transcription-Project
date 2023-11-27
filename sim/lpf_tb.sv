@@ -17,7 +17,7 @@ module lpf_tb();
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
 
-  fir_filter fir(.audio_in(mic_data?{8'b1111_1111}:8'b0),
+  fir_decimator fir(.audio_in(mic_data?{8'b1111_1111}:8'b0),
                 .rst_in(sys_rst),
                 .valid_in(pdm_signal_valid),
                 .clk_in(clk_m),

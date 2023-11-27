@@ -22,7 +22,6 @@ module top_level(
 
   logic clk_m;
   audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
-  //logic clk_locked;
   //clk_wiz_139264 macw (.reset(sys_rst),
   //                    .clk_in1(clk_100mhz),
   //                    .clk_out1(clk_m),
@@ -47,71 +46,50 @@ module top_level(
   logic [7:0] pdm_tally;
   logic [8:0] pdm_counter;
 
-  logic [15:0] dec1_out;
+
+
+  logic signed [15:0] dec1_out;
   logic dec1_out_ready;
-
-  logic signed [15:0] fir_out;
-  logic fir_out_ready; 
-
-  /*fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
-                        .audio_in(mic_data?16'b0000000001111111 : {16'b0}),
+  logic signed [15:0] fir1_out;
+  fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
+  //mic_data?16'b0000000001111111:16'b1111111110000001
+                        .audio_in(mic_data?16'b0000000001111111:16'b1111111110000001),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_m),
                         .dec_output(dec1_out),
+                        .fir_out(fir1_out),
                         .dec_output_ready(dec1_out_ready));
-  */
-  fir_filter #(16) fir1(.audio_in(mic_data?16'b0000000001111111 : {16'b0}),
-                .rst_in(sys_rst),
-                .valid_in(pdm_signal_valid),
-                .clk_in(clk_m),
-                .filtered_audio(dec1_out),
-                .data_ready(dec1_out_ready));
   logic signed [15:0] dec2_out;
   logic dec2_out_ready;
-  /*fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
+  logic signed [15:0] fir2_out;
+  fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
                         .audio_in(dec1_out),
                         .audio_sample_valid(dec1_out_ready),
                         .clk_in(clk_m),
                         .dec_output(dec2_out),
+                        .fir_out(fir2_out),
                         .dec_output_ready(dec2_out_ready));
-  */
-  fir_filter #(16) fir2(.audio_in(dec1_out),
-                .rst_in(sys_rst),
-                .valid_in(dec1_out_ready),
-                .clk_in(clk_m),
-                .filtered_audio(dec2_out),
-                .data_ready(dec2_out_ready));
   logic signed [15:0] dec3_out;
   logic dec3_out_ready;
-  /*
+  logic signed [15:0] fir3_out;
   fir_decimator #(16) fir_dec3(.rst_in(sys_rst),
                         .audio_in(dec2_out),
                         .audio_sample_valid(dec2_out_ready),
                         .clk_in(clk_m),
                         .dec_output(dec3_out),
-                        .dec_output_ready(dec3_out_ready));*/
-  fir_filter #(16) fir3(.audio_in(dec2_out),
-                .rst_in(sys_rst),
-                .valid_in(dec2_out_ready),
-                .clk_in(clk_m),
-                .filtered_audio(dec3_out),
-                .data_ready(dec3_out_ready));
+                        .fir_out(fir3_out),
+                        .dec_output_ready(dec3_out_ready));
   logic signed [15:0] dec4_out;
   logic dec4_out_ready;
-  /*fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
+  logic signed [15:0] fir4_out;
+  fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
                         .audio_in(dec3_out),
                         .audio_sample_valid(dec3_out_ready),
                         .clk_in(clk_m),
                         .dec_output(dec4_out),
+                        .fir_out(fir4_out),
                         .dec_output_ready(dec4_out_ready));
-  */
-  fir_filter #(16) fir4(.audio_in(dec3_out),
-                .rst_in(sys_rst),
-                .valid_in(dec3_out_ready),
-                .clk_in(clk_m),
-                .filtered_audio(dec4_out),
-                .data_ready(dec4_out_ready));
-  
+                        
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
 
@@ -144,15 +122,8 @@ module top_level(
     end
   end
 
-  logic [7:0] tone_750; //output of sine wave of 750Hz
   logic [7:0] tone_440; //output of sine wave of 440 Hz
-  logic [7:0] single_audio2; //recorder non-echo output
-  logic [7:0] echo_audio2; //recorder echo output
 
-  sine_generator_750 sine_750(.clk_in(clk_m),
-                .rst_in(sys_rst),
-                .step_in(audio_sample_valid),
-                .amp_out(tone_750));
   //generate a 440 Hz tone
   //assign tone_440 = 0; //replace and make instance of sine generator for 440 Hz
   sine_generator_440 sine_440(.clk_in(clk_m),
@@ -160,24 +131,15 @@ module top_level(
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
 
-  recorder my_recorder2(
-    .clk_in(clk_m), //system clock
-    .rst_in(sys_rst),//global reset
-    .record_in(record), //button indicating whether to record or not
-    .audio_valid_in(fir_output_ready),
-    .audio_in(sampled_fir_output[15:8]),
-    .single_out(single_audio2), //played back audio (8 bit signed at 12 kHz)
-    .echo_out(echo_audio2) //played back audio (8 bit signed at 12 kHz)
-  );
-
 
   //choose which signal to play:
-  logic [15:0] audio_data_sel;
+  logic [7:0] audio_data_sel;
   logic [15:0] sampled_dec1;
   logic [15:0] sampled_dec2;
   logic [15:0] sampled_dec3;
   logic [15:0] sampled_dec4;
-  always_ff @(posedge clk_m)begin
+
+  always_ff @(posedge clk_m) begin
     if(dec1_out_ready)
       sampled_dec1 <= dec1_out;
     if(dec2_out_ready)
@@ -187,33 +149,20 @@ module top_level(
     if(dec4_out_ready)
       sampled_dec4 <= dec4_out;
   end
-  logic [9:0] fir_counter;
-  logic signed [15:0] sampled_fir_output;
-  logic fir_output_ready;
-  always_ff @(posedge clk_m)begin
-    if(fir_counter >= 255)begin
-      sampled_fir_output <= sampled_dec4;
-      fir_counter <= 0;
-      fir_output_ready <= 1;
-    end
-    else begin
-      fir_counter <= fir_counter + 1;
-      fir_output_ready <= 0;
-    end
-  end
+ 
   always_comb begin
     if          (sw[0])begin
-      audio_data_sel = tone_750; //signed
-    end else if (sw[1])begin
       audio_data_sel = tone_440; //signed
+    end else if (sw[1])begin
+      audio_data_sel = dec3_out[7:0]; //signed
     end else if (sw[5])begin
-      audio_data_sel = sampled_dec1; //signed
+      audio_data_sel = sampled_dec2[7:0]; //signed
     end else if (sw[6])begin
-      audio_data_sel = sampled_dec2;
+      audio_data_sel = sampled_dec1[7:0];
     end else if (sw[7])begin
-      audio_data_sel = single_audio2; //signed
+      audio_data_sel = sampled_dec4[7:0]; //signed
     end else begin
-      audio_data_sel = sampled_dec4; //signed
+      audio_data_sel = fir4_out[7:0]; //signed
     end
   end
 
@@ -253,7 +202,7 @@ endmodule // top_level
 //Volume Control
 module volume_control (
   input wire [2:0] vol_in,
-  input wire signed [15:0] signal_in,
+  input wire signed [7:0] signal_in,
   output logic signed [7:0] signal_out);
     logic [2:0] shift;
     assign shift = 3'd7 - vol_in;

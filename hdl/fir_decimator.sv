@@ -4,17 +4,17 @@ module fir_decimator #(
     parameter WIDTH = 8
 ) (
     input wire rst_in,
-    input wire signed [WIDTH-1:0] audio_in,
+    input wire signed [15:0] audio_in,
     input wire audio_sample_valid,
     input wire clk_in,
-    output logic signed [WIDTH:0] dec_output,
+    output logic signed [15:0] dec_output,
+    output logic signed [15:0] fir_out,
     output logic dec_output_ready
 );
 
-    logic signed [7:0] fir_out;
     logic fir_ready;
     logic [3:0] counter;
-    logic [WIDTH:0] fir_output;
+    logic signed [15:0] fir_output;
     fir_filter#(WIDTH) fir1(.audio_in(audio_in),
                 .rst_in(rst_in),
                 .valid_in(audio_sample_valid),
@@ -28,15 +28,21 @@ module fir_decimator #(
             dec_output <= 0;
         end
         else begin
-            if(counter >= 4)begin
-                counter <= 0;
-                dec_output_ready <= 1;
+            //output every 4 fir_outputs from fir1
+            
+            if (fir_ready) begin
+                fir_out <= fir_output;
+                if (counter == 3) begin
+                    dec_output_ready <= 1; // Assert output ready
+                    dec_output <= fir_output; // Output the filtered data
+                    counter <= 0; // Reset counter
+                end
+                else begin
+                    dec_output_ready <= 0; // De-assert output ready
+                    counter <= counter + 1; // Increment counter
+                end
             end
             else begin
-                if(fir_ready)begin
-                    counter <= counter + 1;
-                    dec_output <= fir_output;
-                end
                 dec_output_ready <= 0;
             end
         end
