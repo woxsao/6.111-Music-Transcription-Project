@@ -11,19 +11,19 @@ module fft_tb();
     logic fft_out_ready;
     logic fft_out_valid;
     logic fft_out_last;
-    logic [15:0] fft_out_data;  
+    logic [15:0] fft_out_data;
     logic signed [7:0] tone_750;
     logic hanning_sample_valid;
     //logic [15:0] rand_data;
-    logic [12:0] peak;
+    logic [11:0] peak;
     logic peak_valid;
 
-    sine_generator_750 sine_inst(
+    cyn_sine_generator_750 sine_inst(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .step_in(audio_sample_valid),
         .amp(tone_750)
-    ); 
+    );
 
     hanning_window #(8,4096) hann_inst (
         .clk_in(clk_in),
@@ -72,7 +72,7 @@ module fft_tb();
     rst_in = 0;
     in_sample = 0;
     //rand_data = 0;
-    for (int i = 0; i<15000; i=i+1)begin
+    for (int i = 0; i<20000; i=i+1)begin
       audio_sample_valid = 1;
       #10;
       audio_sample_valid = 0;

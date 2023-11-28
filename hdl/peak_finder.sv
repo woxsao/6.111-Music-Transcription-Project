@@ -6,15 +6,15 @@ module peak_finder(
             input wire rst_in,
             input wire fft_valid_in,
             input wire [15:0] fft_data_in,
-            output logic peak_out,
+            output logic [11:0] peak_out,
             output logic peak_valid_out
   );
-  logic [12:0] counter;
+  logic [11:0] counter;
 
-  logic [12:0] max_count;
-  logic [15:0] max_peak;
+  logic [11:0] max_count;
+  logic [17:0] max_peak;
 
-  logic [15:0] cur_peak;
+  logic [17:0] cur_peak;
 
 
   always_ff @(posedge clk_in)begin
@@ -33,7 +33,7 @@ module peak_finder(
             end
             cur_peak <= fft_data_in[7:0] * fft_data_in[7:0] + fft_data_in[15:8] * fft_data_in[15:8];
         end else begin
-            if (counter == 301) begin
+            if (counter == 300) begin
                 peak_out <= max_count;
                 peak_valid_out <= 1;
                 max_count <= 0;
@@ -44,7 +44,7 @@ module peak_finder(
             end
         end
     end
-      
+
     end
   end
 endmodule
