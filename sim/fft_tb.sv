@@ -15,6 +15,8 @@ module fft_tb();
     logic signed [7:0] tone_750;
     logic hanning_sample_valid;
     //logic [15:0] rand_data;
+    logic [12:0] peak;
+    logic peak_valid;
 
     sine_generator_750 sine_inst(
         .clk_in(clk_in),
@@ -42,6 +44,15 @@ module fft_tb();
         .fft_out_valid(fft_out_valid),
         .fft_out_last(fft_out_last),
         .fft_out_data(fft_out_data)
+    );
+
+    peak_finder peak_inst(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .fft_valid_in(fft_out_valid),
+        .fft_data_in(fft_out_data),
+        .peak_out(peak),
+        .peak_valid_out(peak_valid)
     );
 
     always begin
