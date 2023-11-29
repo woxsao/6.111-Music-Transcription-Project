@@ -13,7 +13,7 @@ module hanning_window #(
 )(
     input wire clk_in,
     input wire rst_in,
-    input wire [DATA_WIDTH-1:0] in_sample,
+    input wire signed [DATA_WIDTH-1:0] in_sample,
     input wire audio_sample_valid,
     output logic signed [7:0] out_sample,
     output logic hanning_sample_valid
