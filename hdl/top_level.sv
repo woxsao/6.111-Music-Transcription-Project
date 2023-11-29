@@ -88,7 +88,16 @@ module top_level(
                         .dec_output(dec4_out),
                         .fir_out(fir4_out),
                         .dec_output_ready(dec4_out_ready));
-                        
+  logic signed [7:0] hw_output;
+  logic hw_valid;
+  hanning_window hw(
+                    .clk_in(clk_in),
+                    .rst_in(sys_rst),
+                    .in_sample(dec4_out),
+                    .audio_sample_valid(dec4_out_ready),
+                    .out_sample(hw_output),
+                    .hanning_sample_valid(hw_valid)
+                    );
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
 

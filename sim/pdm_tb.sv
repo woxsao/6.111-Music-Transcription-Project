@@ -76,6 +76,22 @@ module chained_dec_tb();
                     .out_sample(hw_output),
                     .hanning_sample_valid(hw_valid)
                     );
+  logic fft_ready;
+  logic fft_out_ready;
+  logic fft_out_valid;
+  logic fft_out_last;
+  logic [15:0] fft_out_data;
+  fft fft_inst(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .in_sample(hw_output),
+        .audio_sample_valid(hw_valid),
+        .fft_ready(fft_ready),
+        .fft_out_ready(fft_out_ready),
+        .fft_out_valid(fft_out_valid),
+        .fft_out_last(fft_out_last),
+        .fft_out_data(fft_out_data)
+    );
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;
@@ -156,7 +172,7 @@ module chained_dec_tb();
     sys_rst = 1;
     #10;
     sys_rst = 0;
-    #4000000;
+    #40000000;
     /*for (int i = 0; i<128; i=i+1)begin
       level_in = i;
       for (int j = 0; j<30; j=j+1)begin
