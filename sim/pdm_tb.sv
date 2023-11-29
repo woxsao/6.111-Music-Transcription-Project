@@ -66,8 +66,16 @@ module chained_dec_tb();
                         .clk_in(clk_in),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
-
-
+  logic signed [7:0] hw_output;
+  logic hw_valid;
+  hanning_window hw(
+                    .clk_in(clk_in),
+                    .rst_in(sys_rst),
+                    .in_sample(dec4_out),
+                    .audio_sample_valid(dec4_out_ready),
+                    .out_sample(hw_output),
+                    .hanning_sample_valid(hw_valid)
+                    );
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;

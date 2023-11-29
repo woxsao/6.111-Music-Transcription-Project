@@ -1,42 +1,66 @@
 `timescale 1ns / 1ps
 `default_nettype none // prevents system from inferring an undeclared logic (good practice)
 
+`ifdef SYNTHESIS
+`define FPATH(X) `"X`"
+`else /* ! SYNTHESIS */
+`define FPATH(X) `"./data/X`"
+`endif  /* ! SYNTHESIS */
+
 module hanning_window #(
     parameter DATA_WIDTH = 8,
     parameter SAMPLE_COUNT = 4096
 )(
     input wire clk_in,
     input wire rst_in,
-    input wire [DATA_WIDTH-1:0] in_sample,
-    output logic [DATA_WIDTH-1:0] out_sample,
-    //output real cosout
-    output logic audio_sample_valid
+    input wire signed [DATA_WIDTH-1:0] in_sample,
+    input wire audio_sample_valid,
+    output logic signed [7:0] out_sample,
+    output logic hanning_sample_valid
 );
-    // array where each element is data type logic and width 8, and there are 4096 elements
-    //logic [DATA_WIDTH-1:0] window[SAMPLE_COUNT-1:0];
-    real PI;
-    assign PI = 3.141592;
-    logic [11:0] i;
+    logic [11:0] coeff_addr;
+    logic signed [31:0] post_mult_shift;
 
-    real cosout;
-    //assign cosout = $cos((2*PI*in_sample/256))*100;
-    assign cosout = 0.5 * (1 - $cos(2 * PI * i / (SAMPLE_COUNT - 1)));
-    
+    logic signed [7:0] in_sample_pipe;
+
+    logic signed [24:0] stored_coeff;
+
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
             out_sample <= 0;
-            i <= 0;
+            coeff_addr <= 0;
+            hanning_sample_valid <= 0;
+            post_mult_shift <= 0;
+            in_sample_pipe <=0;
         end else begin
-            i <= i+1;
-            // Hann window function
-            // for (int i = 0; i < SAMPLE_COUNT; i++) begin
-            //     //out_sample <= cosout;
-            //     out_sample <= cosout;
-            // end
-            out_sample <= cosout * in_sample;
+            if (audio_sample_valid) begin
+                coeff_addr <= coeff_addr+1;
+                in_sample_pipe <= in_sample;
+                post_mult_shift <= (stored_coeff * in_sample_pipe) ;
+                out_sample <= post_mult_shift >>> 24;
+                hanning_sample_valid <= 1;
+            end else begin
+                hanning_sample_valid <= 0;
+            end
         end
         //out_sample <= $cos(2*PI*in_sample);
     end
+
+    xilinx_single_port_ram_read_first #(
+        .RAM_WIDTH(28),                       // Specify RAM data width
+        .RAM_DEPTH(4096),                     // Specify RAM depth (number of entries)
+        .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
+        .INIT_FILE(".INIT_FILE(`FPATH(coefficients.mem))")          // Specify name/location of RAM initialization file if using one (leave blank if not)
+    ) image_BROM (
+        .addra(coeff_addr),     // Address bus, width determined from RAM_DEPTH
+        .dina(0),       // RAM input data, width determined from RAM_WIDTH
+        .clka(clk_in),       // Clock
+        .wea(0),         // Write enable
+        .ena(1),         // RAM Enable, for additional power savings, disable port when not in use
+        .rsta(rst_in),       // Output reset (does not affect memory contents)
+        .regcea(1),   // Output register enable
+        .douta(stored_coeff)      // RAM output data, width determined from RAM_WIDTH
+    );
 
 endmodule
 
