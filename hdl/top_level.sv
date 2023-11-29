@@ -133,21 +133,6 @@ module top_level(
 
   //choose which signal to play:
   logic [7:0] audio_data_sel;
-  logic [15:0] sampled_dec1;
-  logic [15:0] sampled_dec2;
-  logic [15:0] sampled_dec3;
-  logic [15:0] sampled_dec4;
-
-  always_ff @(posedge clk_m) begin
-    if(dec1_out_ready)
-      sampled_dec1 <= dec1_out;
-    if(dec2_out_ready)
-      sampled_dec2 <= dec2_out;
-    if(dec3_out_ready)
-      sampled_dec3 <= dec3_out;
-    if(dec4_out_ready)
-      sampled_dec4 <= dec4_out;
-  end
  
   always_comb begin
     if          (sw[0])begin

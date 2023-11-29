@@ -28,7 +28,6 @@ module chained_dec_tb();
           );
   logic signed [15:0] dec1_out;
   logic dec1_out_ready;
-  logic [15:0] preserved_dec1;
 
   logic fake_pdm_signal_valid;
   logic [10:0] fake_counter;
@@ -66,7 +65,14 @@ module chained_dec_tb();
                         .clk_in(clk_in),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
-
+  logic pdm_out2;
+  pdm uut2
+          ( .clk_in(clk_in),
+            .rst_in(sys_rst),
+            .level_in(dec4_out),
+            .tick_in(dec4_out_ready),
+            .pdm_out(pdm_out2)
+          );
 
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
