@@ -52,8 +52,7 @@ module top_level(
   logic dec1_out_ready;
   logic signed [15:0] fir1_out;
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
-  //mic_data?16'b0000000001111111:16'b1111111110000001
-                        .audio_in(mic_data?16'b0000000001111111:16'b1111111110000001),
+                        .audio_in(mic_data?16'b0000000001111111:0),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_m),
                         .dec_output(dec1_out),
@@ -156,13 +155,13 @@ module top_level(
     end else if (sw[1])begin
       audio_data_sel = dec3_out[7:0]; //signed
     end else if (sw[5])begin
-      audio_data_sel = sampled_dec2[7:0]; //signed
+      audio_data_sel = dec1_out; //signed
     end else if (sw[6])begin
-      audio_data_sel = sampled_dec1[7:0];
+      audio_data_sel = dec2_out;
     end else if (sw[7])begin
-      audio_data_sel = sampled_dec4[7:0]; //signed
+      audio_data_sel = dec3_out; //signed
     end else begin
-      audio_data_sel = fir4_out[7:0]; //signed
+      audio_data_sel = fir1_out; //signed
     end
   end
 
