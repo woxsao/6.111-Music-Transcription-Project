@@ -25,7 +25,7 @@ module fir_filter #(
     assign accumulator_rounded = ((accumulator) + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} });
     assign accumulator_rounded_shifted = (accumulator_rounded > 0)? {7'b0,accumulator_rounded[23:15]}: {7'b1111111,accumulator_rounded[23:15]};
     initial begin
-        COEFFICIENTS[0] = 42;
+        /*COEFFICIENTS[0] = 42;
         COEFFICIENTS[1] = -70;
         COEFFICIENTS[2] = -206;
         COEFFICIENTS[3] = -415;
@@ -53,7 +53,36 @@ module fir_filter #(
         COEFFICIENTS[25] = -415;
         COEFFICIENTS[26] = -206;
         COEFFICIENTS[27] = -70;
-        COEFFICIENTS[28] = 42;
+        COEFFICIENTS[28] = 42;*/
+        COEFFICIENTS[0] = -1;
+        COEFFICIENTS[1] = -2;
+        COEFFICIENTS[2] = -3;
+        COEFFICIENTS[3] = -5;
+        COEFFICIENTS[4] = -6;
+        COEFFICIENTS[5] = -5;
+        COEFFICIENTS[6] = 0;
+        COEFFICIENTS[7] = 10;
+        COEFFICIENTS[8] = 25;
+        COEFFICIENTS[9] = 45;
+        COEFFICIENTS[10] = 67;
+        COEFFICIENTS[11] = 90;
+        COEFFICIENTS[12] = 110;
+        COEFFICIENTS[13] = 123;
+        COEFFICIENTS[14] = 128;
+        COEFFICIENTS[15] = 123;
+        COEFFICIENTS[16] = 110;
+        COEFFICIENTS[17] = 90;
+        COEFFICIENTS[18] = 67;
+        COEFFICIENTS[19] = 45;
+        COEFFICIENTS[20] = 25;
+        COEFFICIENTS[21] = 10;
+        COEFFICIENTS[22] = 0;
+        COEFFICIENTS[23] = -5;
+        COEFFICIENTS[24] = -6;
+        COEFFICIENTS[25] = -5;
+        COEFFICIENTS[26] = -3;
+        COEFFICIENTS[27] = -2;
+        COEFFICIENTS[28] = -1;
 
 
     end
@@ -80,8 +109,8 @@ module fir_filter #(
                 if(counter >= 29)begin
                     data_ready <= 1;
                     //accumulator_rounded <= accumulator[23:0] + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} };
-                    filtered_audio <= accumulator_rounded_shifted;
-                    //filtered_audio <= accumulator[7:0];
+                    //filtered_audio <= accumulator_rounded[15:0];
+                    filtered_audio <= accumulator[23]?{2'b11,accumulator[23:10]}: accumulator[23:10];
                     multiply <= 0;
                     accumulator <= 0;
                 end
@@ -91,7 +120,7 @@ module fir_filter #(
                     coeff <= COEFFICIENTS[counter]; //debug line
                     delay_line[counter] <= (counter ==28) ? delay_line[28]:delay_line[counter+1]; //circular shift
                     //accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[28-counter]);
-                    accumulator <= accumulator + (COEFFICIENTS[counter]*delay_line[counter]);
+                    accumulator <= $signed(accumulator) + ($signed(COEFFICIENTS[counter])*$signed(delay_line[counter]));
                     counter <= counter + 1;
                 end
             end

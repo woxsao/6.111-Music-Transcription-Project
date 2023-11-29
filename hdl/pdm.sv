@@ -14,6 +14,7 @@ module pdm(
   always_ff @(posedge clk_in)begin
     if(rst_in)begin
       count <= 0;
+      pdm_out <= 0;
     end
     else begin
       if(tick_in)begin

@@ -36,7 +36,9 @@ module chained_dec_tb();
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
     //{16'b1111111110000001}
     //?16'b0000000100000000 : 16'b0
-                        .audio_in(pdm_out?16'b0000000001111111:16'b1111111110000001),
+    //?16'b0000000001111111: 16'b1111111110000000 //-128-127
+    //16'b0000000111111111:16'b1111111000000000 //-512->511
+                        .audio_in(pdm_out?16'b0000001111111111: 16'b1111110000000000),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_in),
                         .dec_output(dec1_out),
