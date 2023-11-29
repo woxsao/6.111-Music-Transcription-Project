@@ -95,7 +95,7 @@ module top_level(
   logic old_mic_clk; //prior mic clock for edge detection
   logic sampled_mic_data; //one bit grabbed/held values of mic
   logic pdm_signal_valid; //single-cycle signal at 4.352 MHz indicating pdm steps
-
+  logic pwm_out_signal;
   assign pdm_signal_valid = mic_clk && ~old_mic_clk;
 
 
@@ -161,7 +161,7 @@ module top_level(
     end else if (sw[7])begin
       audio_data_sel = dec3_out; //signed
     end else begin
-      audio_data_sel = fir1_out; //signed
+      audio_data_sel = dec4_out; //signed
     end
   end
 
@@ -184,9 +184,25 @@ module top_level(
     .tick_in(pdm_signal_valid),
     .pdm_out(pdm_out_signal)
   );
+  //logic to produce 25 MHz step signal for PWM module
+  logic [1:0] pwm_counter;
+  logic pwm_step; //single-cycle pwm step
+  assign pwm_step = (pwm_counter==2'b11);
+
+  always_ff @(posedge clk_m)begin
+    pwm_counter <= pwm_counter+1;
+  end
+  pwm my_pwm(
+    .clk_in(clk_m),
+    .rst_in(sys_rst),
+    .level_in(vol_out),
+    .tick_in(pwm_step),
+    .pwm_out(pwm_out_signal)
+  );
 
   always_comb begin
     case (sw[4:3])
+      2'b00: audio_out = pwm_out_signal;
       2'b01: audio_out = pdm_out_signal;
       2'b10: audio_out = sampled_mic_data;
       2'b11: audio_out = 0;
