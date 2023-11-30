@@ -38,7 +38,7 @@ module chained_dec_tb();
     //?16'b0000000100000000 : 16'b0
     //?16'b0000000001111111: 16'b1111111110000000 //-128-127
     //16'b0000000111111111:16'b1111111000000000 //-512->511
-                        .audio_in(pdm_out?16'b0000001111111111: 16'b1111110000000000),
+                        .audio_in(pdm_out?16'b0000000001111111: 16'b1111111110000000),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_in),
                         .dec_output(dec1_out),
@@ -72,7 +72,7 @@ module chained_dec_tb();
           ( .clk_in(clk_in),
             .rst_in(sys_rst),
             .level_in(dec4_out),
-            .tick_in(dec4_out_ready),
+            .tick_in(pdm_signal_valid),
             .pdm_out(pdm_out2)
           );
 
@@ -156,7 +156,12 @@ module chained_dec_tb();
     sys_rst = 1;
     #10;
     sys_rst = 0;
-    #4000000;
+    #700000;
+    #10;
+    sys_rst = 1;
+    #10;
+    sys_rst = 0;
+    #3300000;
     /*for (int i = 0; i<128; i=i+1)begin
       level_in = i;
       for (int j = 0; j<30; j=j+1)begin
