@@ -9,7 +9,7 @@ module note_lookup_tb();
   note_lookup note_lookup(
                             .clk_in(clk_in),
                             .rst_in(rst_in),
-                            .bin_index(107),
+                            .bin_index(10),
                             .ready_in(1),
                             .note_index(note_index)
                         );

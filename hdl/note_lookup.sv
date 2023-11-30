@@ -53,8 +53,13 @@ module note_lookup(
                 finding <= 1'b1;
             end
             else if(finding && (bin_floor[counter]>=bin_index) && ~found)begin
+                if(counter == 0)begin
+                    note_index <= 0;
+                end
+                else begin
+                    note_index <= {1'b1,counter};
+                end
                 found <= 1'b1;
-                note_index <= {1'b1,counter};
                 finding <= 0;
             end
             else if(finding) begin
