@@ -110,7 +110,8 @@ module fir_filter #(
                     data_ready <= 1;
                     //accumulator_rounded <= accumulator[23:0] + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} };
                     //filtered_audio <= accumulator_rounded[15:0];
-                    filtered_audio <= accumulator[23]?{2'b11,accumulator[23:10]}: accumulator[23:10];
+                    //filtered_audio <= accumulator[23]?{2'b11,accumulator[23:10]}: accumulator[23:10];
+                    filtered_audio <= accumulator[23:8];
                     multiply <= 0;
                     accumulator <= 0;
                 end

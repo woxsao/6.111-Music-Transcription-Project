@@ -68,10 +68,12 @@ module chained_dec_tb();
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
   logic pdm_out2;
+  logic [7:0] dec4_trimmed;
+  assign dec4_trimmed = dec4_out[15:8];
   pdm uut2
           ( .clk_in(clk_in),
             .rst_in(sys_rst),
-            .level_in(dec4_out),
+            .level_in(dec4_trimmed),
             .tick_in(pdm_signal_valid),
             .pdm_out(pdm_out2)
           );

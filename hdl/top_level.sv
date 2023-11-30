@@ -146,7 +146,7 @@ module top_level(
     end else if (sw[7])begin
       audio_data_sel = dec3_out; //signed
     end else begin
-      audio_data_sel = dec4_out; //signed
+      audio_data_sel = dec4_out>>>2; //signed
     end
   end
 
