@@ -56,6 +56,9 @@ module note_lookup(
                 if(counter == 0)begin
                     note_index <= 0;
                 end
+                if (counter >= 212)begin
+                    note_index <= {1'b1, 8'b11010100};
+                end
                 else begin
                     note_index <= {1'b1,counter};
                 end
