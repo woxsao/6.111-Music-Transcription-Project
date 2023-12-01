@@ -20,10 +20,7 @@ module fir_filter #(
     logic signed [WIDTH+8-1:0] coeff;
     logic signed [WIDTH-1:0] cur;
     logic multiply;
-    logic signed [23:0] accumulator_rounded;
-    logic signed [15:0] accumulator_rounded_shifted;
-    assign accumulator_rounded = ((accumulator) + { {(16){1'b0}}, 1'b1, {(24-16-1){1'b0}} });
-    assign accumulator_rounded_shifted = (accumulator_rounded > 0)? {7'b0,accumulator_rounded[23:15]}: {7'b1111111,accumulator_rounded[23:15]};
+    
     initial begin
         /*COEFFICIENTS[0] = 42;
         COEFFICIENTS[1] = -70;

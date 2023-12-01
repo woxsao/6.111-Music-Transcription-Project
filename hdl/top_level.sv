@@ -21,12 +21,13 @@ module top_level(
   assign sys_rst = btn[0];
 
   logic clk_m;
-  audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
-  //clk_wiz_139264 macw (.reset(sys_rst),
-  //                    .clk_in1(clk_100mhz),
-  //                    .clk_out1(clk_m),
-  //                    .locked(clk_locked)
-  //                  ); //139.264 MHz
+  logic clk_locked;
+  //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
+  clk_wiz_69632 macw (.reset(sys_rst),
+                      .clk_in1(clk_100mhz),
+                      .clk_out1(clk_m),
+                      .locked(clk_locked)
+                    ); //69.632 MHz
 
 
   logic record; //signal used to trigger recording
@@ -81,7 +82,7 @@ module top_level(
   logic signed [15:0] dec4_out;
   logic dec4_out_ready;
   logic signed [15:0] fir4_out;
-  fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
+  fir_decimator #(16,4) fir_dec4(.rst_in(sys_rst),
                         .audio_in(dec3_out),
                         .audio_sample_valid(dec3_out_ready),
                         .clk_in(clk_m),
@@ -146,11 +147,46 @@ module top_level(
     end else if (sw[7])begin
       audio_data_sel = dec3_out; //signed
     end else begin
-      audio_data_sel = dec4_out; //signed
+      audio_data_sel = dec4_out>>>2; //signed
     end
   end
 
-
+  logic signed [7:0] hw_output;
+  logic hw_valid;
+  hanning_window hw(
+                    .clk_in(clk_m),
+                    .rst_in(sys_rst),
+                    .in_sample(dec4_out),
+                    .audio_sample_valid(dec4_out_ready),
+                    .out_sample(hw_output),
+                    .hanning_sample_valid(hw_valid)
+                    );
+  logic fft_ready;
+  logic fft_out_ready;
+  logic fft_out_valid;
+  logic fft_out_last;
+  logic [15:0] fft_out_data;
+  fft fft_inst(
+        .clk_in(clk_m),
+        .rst_in(sys_rst),
+        .in_sample(hw_output),
+        .audio_sample_valid(hw_valid),
+        .fft_ready(fft_ready),
+        .fft_out_ready(fft_out_ready),
+        .fft_out_valid(fft_out_valid),
+        .fft_out_last(fft_out_last),
+        .fft_out_data(fft_out_data)
+    );
+  logic [11:0] peak_out;
+  logic peak_valid_out;
+  peak_finder(
+            .clk_in(clk_m),
+            .rst_in(sys_rst),
+            .fft_valid_in(fft_out_valid),
+            .fft_data_in(fft_out_data),
+            .peak_out(peak_out),
+            .peak_valid_out(peak_valid_out)
+  );
   logic signed [7:0] vol_out; //can be signed or not signed...doesn't really matter
   // all this does is convey the output of vol_out to the input of the pdm
   // since it isn't used directly with any sort of math operation its signedness

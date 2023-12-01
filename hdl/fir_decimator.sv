@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
 module fir_decimator #(
-    parameter WIDTH = 8
+    parameter WIDTH = 8, 
+    parameter DEC_FACTOR = 4
 ) (
     input wire rst_in,
     input wire signed [15:0] audio_in,
@@ -32,7 +33,7 @@ module fir_decimator #(
             
             if (fir_ready) begin
                 fir_out <= fir_output;
-                if (counter == 3) begin
+                if (counter == DEC_FACTOR-1) begin
                     dec_output_ready <= 1; // Assert output ready
                     dec_output <= fir_output; // Output the filtered data
                     counter <= 0; // Reset counter
