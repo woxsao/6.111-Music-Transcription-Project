@@ -28,6 +28,7 @@ module chained_dec_tb();
           );
   logic signed [15:0] dec1_out;
   logic dec1_out_ready;
+  logic [15:0] preserved_dec1;
 
   logic fake_pdm_signal_valid;
   logic [10:0] fake_counter;
@@ -36,9 +37,7 @@ module chained_dec_tb();
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
     //{16'b1111111110000001}
     //?16'b0000000100000000 : 16'b0
-    //?16'b0000000001111111: 16'b1111111110000000 //-128-127
-    //16'b0000000111111111:16'b1111111000000000 //-512->511
-                        .audio_in(pdm_out?16'b0000000001111111: 16'b1111111110000000),
+                        .audio_in(pdm_out?16'b0000000001111111:16'b1111111110000001),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_in),
                         .dec_output(dec1_out),
@@ -67,17 +66,32 @@ module chained_dec_tb();
                         .clk_in(clk_in),
                         .dec_output(dec4_out),
                         .dec_output_ready(dec4_out_ready));
-  logic pdm_out2;
-  logic [7:0] dec4_trimmed;
-  assign dec4_trimmed = dec4_out[15:8];
-  pdm uut2
-          ( .clk_in(clk_in),
-            .rst_in(sys_rst),
-            .level_in(dec4_trimmed),
-            .tick_in(pdm_signal_valid),
-            .pdm_out(pdm_out2)
-          );
-
+  logic signed [7:0] hw_output;
+  logic hw_valid;
+  hanning_window hw(
+                    .clk_in(clk_in),
+                    .rst_in(sys_rst),
+                    .in_sample(dec4_out),
+                    .audio_sample_valid(dec4_out_ready),
+                    .out_sample(hw_output),
+                    .hanning_sample_valid(hw_valid)
+                    );
+  logic fft_ready;
+  logic fft_out_ready;
+  logic fft_out_valid;
+  logic fft_out_last;
+  logic [15:0] fft_out_data;
+  fft fft_inst(
+        .clk_in(clk_in),
+        .rst_in(rst_in),
+        .in_sample(hw_output),
+        .audio_sample_valid(hw_valid),
+        .fft_ready(fft_ready),
+        .fft_out_ready(fft_out_ready),
+        .fft_out_valid(fft_out_valid),
+        .fft_out_last(fft_out_last),
+        .fft_out_data(fft_out_data)
+    );
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;
@@ -158,12 +172,7 @@ module chained_dec_tb();
     sys_rst = 1;
     #10;
     sys_rst = 0;
-    #700000;
-    #10;
-    sys_rst = 1;
-    #10;
-    sys_rst = 0;
-    #3300000;
+    #40000000;
     /*for (int i = 0; i<128; i=i+1)begin
       level_in = i;
       for (int j = 0; j<30; j=j+1)begin
