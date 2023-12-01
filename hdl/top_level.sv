@@ -21,17 +21,12 @@ module top_level(
   assign sys_rst = btn[0];
 
   logic clk_m;
-  logic fir_input_valid;
-  logic fir_output_ready;
-  logic fir_ready_for_input;
-  logic [31:0] fir_output_data;
-  //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
-  logic clk_locked;
-  clk_wiz_69632 macw (.reset(sys_rst),
-                      .clk_in1(clk_100mhz),
-                      .clk_out1(clk_m),
-                      .locked(clk_locked)
-                    ); //69.632 MHz
+  audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
+  //clk_wiz_139264 macw (.reset(sys_rst),
+  //                    .clk_in1(clk_100mhz),
+  //                    .clk_out1(clk_m),
+  //                    .locked(clk_locked)
+  //                  ); //139.264 MHz
 
 
   logic record; //signal used to trigger recording
@@ -50,52 +45,68 @@ module top_level(
   //logic for interfacing with the microphone and generating 3.072 MHz signals
   logic [7:0] pdm_tally;
   logic [8:0] pdm_counter;
-  logic signed [7:0] fir_out;
-  logic signed [15:0] fir_in;
-  fir_compiler_30taps_69632clk fir (.aclk(clk_m),
-                                    .s_axis_data_tvalid(audio_sample_valid),
-                                    .s_axis_data_tdata((mic_audio > 0)?mic_audio:{8'b1111_1111, mic_audio}),
-                                    .s_axis_data_tready(fir_ready_for_input),
-                                    .m_axis_data_tvalid(fir_output_ready), //fir ready for an input 
-                                    .m_axis_data_tdata(fir_output_data)
-                                    );
-  always_ff @(posedge clk_m)begin
-    if(fir_output_ready)begin
-      fir_out <= (fir_output_data>>>8)>>>sw[12:10];
-    end
-    if(fir_ready_for_input)
-      fir_in <= (mic_audio > 0)?mic_audio:{8'b1111_1111, mic_audio};
-    //fir_in <= (mic_audio > 0)? {8'b0, mic_audio}:{8'b1111_1111, mic_audio};
 
-  end
+
+
+  logic signed [15:0] dec1_out;
+  logic dec1_out_ready;
+  logic signed [15:0] fir1_out;
+  fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
+                        .audio_in(mic_data?16'b0000000001111111:0),
+                        .audio_sample_valid(pdm_signal_valid),
+                        .clk_in(clk_m),
+                        .dec_output(dec1_out),
+                        .fir_out(fir1_out),
+                        .dec_output_ready(dec1_out_ready));
+  logic signed [15:0] dec2_out;
+  logic dec2_out_ready;
+  logic signed [15:0] fir2_out;
+  fir_decimator #(16) fir_dec2(.rst_in(sys_rst),
+                        .audio_in(dec1_out),
+                        .audio_sample_valid(dec1_out_ready),
+                        .clk_in(clk_m),
+                        .dec_output(dec2_out),
+                        .fir_out(fir2_out),
+                        .dec_output_ready(dec2_out_ready));
+  logic signed [15:0] dec3_out;
+  logic dec3_out_ready;
+  logic signed [15:0] fir3_out;
+  fir_decimator #(16) fir_dec3(.rst_in(sys_rst),
+                        .audio_in(dec2_out),
+                        .audio_sample_valid(dec2_out_ready),
+                        .clk_in(clk_m),
+                        .dec_output(dec3_out),
+                        .fir_out(fir3_out),
+                        .dec_output_ready(dec3_out_ready));
+  logic signed [15:0] dec4_out;
+  logic dec4_out_ready;
+  logic signed [15:0] fir4_out;
+  fir_decimator #(16) fir_dec4(.rst_in(sys_rst),
+                        .audio_in(dec3_out),
+                        .audio_sample_valid(dec3_out_ready),
+                        .clk_in(clk_m),
+                        .dec_output(dec4_out),
+                        .fir_out(fir4_out),
+                        .dec_output_ready(dec4_out_ready));
+                        
   localparam PDM_COUNT_PERIOD = 32; //do not change
   localparam NUM_PDM_SAMPLES = 256; //number of pdm in downsample/decimation/average
 
   logic old_mic_clk; //prior mic clock for edge detection
   logic sampled_mic_data; //one bit grabbed/held values of mic
-  logic pdm_signal_valid; //single-cycle signal at 3.072 MHz indicating pdm steps
-
+  logic pdm_signal_valid; //single-cycle signal at 4.352 MHz indicating pdm steps
+  logic pwm_out_signal;
   assign pdm_signal_valid = mic_clk && ~old_mic_clk;
 
 
-  //logic to produce 25 MHz step signal for PWM module
-  logic [1:0] pwm_counter;
-  logic pwm_step; //single-cycle pwm step
-  assign pwm_step = (pwm_counter==2'b11);
-
-  always_ff @(posedge clk_m)begin
-    pwm_counter <= pwm_counter+1;
-  end
-
   //generate clock signal for microphone
-  //microphone signal at ~3.072 MHz
+  //microphone signal at ~4.352 MHz
   always_ff @(posedge clk_m)begin
     mic_clk <= m_clock_counter < PDM_COUNT_PERIOD/2;
     m_clock_counter <= (m_clock_counter==PDM_COUNT_PERIOD-1)?0:m_clock_counter+1;
     old_mic_clk <= mic_clk;
   end
-  //generate audio signal (samples at ~12 kHz
-  logic [3:0] audio_counter;
+  //generate audio signal (samples at ~17 kHz
   always_ff @(posedge clk_m)begin
     if (pdm_signal_valid)begin
       sampled_mic_data    <= mic_data;
@@ -110,64 +121,32 @@ module top_level(
     end
   end
 
-  logic [7:0] tone_750; //output of sine wave of 750Hz
   logic [7:0] tone_440; //output of sine wave of 440 Hz
-  logic [7:0] single_audio; //recorder non-echo output
-  logic [7:0] echo_audio; //recorder echo output
-  logic [7:0] single_audio2; //recorder non-echo output
-  logic [7:0] echo_audio2; //recorder echo output
 
-  sine_generator_750 sine_750(.clk_in(clk_m),
-                .rst_in(sys_rst),
-                .step_in(audio_sample_valid),
-                .amp_out(tone_750));
   //generate a 440 Hz tone
   //assign tone_440 = 0; //replace and make instance of sine generator for 440 Hz
   sine_generator_440 sine_440(.clk_in(clk_m),
                 .rst_in(sys_rst),
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
-  recorder my_recorder(
-    .clk_in(clk_m), //system clock
-    .rst_in(sys_rst),//global reset
-    .record_in(record), //button indicating whether to record or not
-    .audio_valid_in(fir_output_ready), //12 kHz audio sample valid signal
-    .audio_in(fir_out), //8 bit signed data from microphone
-    //.audio_valid_in(audio_sample_valid),
-    //.audio_in(mic_audio),
-    .single_out(single_audio), //played back audio (8 bit signed at 12 kHz)
-    .echo_out(echo_audio) //played back audio (8 bit signed at 12 kHz)
-  );
-
-  recorder my_recorder2(
-    .clk_in(clk_m), //system clock
-    .rst_in(sys_rst),//global reset
-    .record_in(record), //button indicating whether to record or not
-    //.audio_valid_in(fir_output_ready), //12 kHz audio sample valid signal
-    //.audio_in(fir_out), //8 bit signed data from microphone
-    .audio_valid_in(audio_sample_valid),
-    .audio_in(mic_audio),
-    .single_out(single_audio2), //played back audio (8 bit signed at 12 kHz)
-    .echo_out(echo_audio2) //played back audio (8 bit signed at 12 kHz)
-  );
 
 
   //choose which signal to play:
-  logic [15:0] audio_data_sel;
-
+  logic [7:0] audio_data_sel;
+ 
   always_comb begin
     if          (sw[0])begin
-      audio_data_sel = tone_750; //signed
-    end else if (sw[1])begin
       audio_data_sel = tone_440; //signed
+    end else if (sw[1])begin
+      audio_data_sel = dec3_out[7:0]; //signed
     end else if (sw[5])begin
-      audio_data_sel = mic_audio; //signed
+      audio_data_sel = dec1_out; //signed
     end else if (sw[6])begin
-      audio_data_sel = single_audio; //signed
+      audio_data_sel = dec2_out;
     end else if (sw[7])begin
-      audio_data_sel = single_audio2; //signed
+      audio_data_sel = dec3_out; //signed
     end else begin
-      audio_data_sel = fir_out; //signed
+      audio_data_sel = dec4_out>>>2; //signed
     end
   end
 
@@ -190,9 +169,25 @@ module top_level(
     .tick_in(pdm_signal_valid),
     .pdm_out(pdm_out_signal)
   );
+  //logic to produce 25 MHz step signal for PWM module
+  logic [1:0] pwm_counter;
+  logic pwm_step; //single-cycle pwm step
+  assign pwm_step = (pwm_counter==2'b11);
+
+  always_ff @(posedge clk_m)begin
+    pwm_counter <= pwm_counter+1;
+  end
+  pwm my_pwm(
+    .clk_in(clk_m),
+    .rst_in(sys_rst),
+    .level_in(vol_out),
+    .tick_in(pwm_step),
+    .pwm_out(pwm_out_signal)
+  );
 
   always_comb begin
     case (sw[4:3])
+      2'b00: audio_out = pwm_out_signal;
       2'b01: audio_out = pdm_out_signal;
       2'b10: audio_out = sampled_mic_data;
       2'b11: audio_out = 0;
@@ -207,7 +202,7 @@ endmodule // top_level
 //Volume Control
 module volume_control (
   input wire [2:0] vol_in,
-  input wire signed [15:0] signal_in,
+  input wire signed [7:0] signal_in,
   output logic signed [7:0] signal_out);
     logic [2:0] shift;
     assign shift = 3'd7 - vol_in;
