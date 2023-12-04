@@ -236,7 +236,8 @@ module top_level(
 
   assign spkl = audio_out;
   assign spkr = audio_out;
-
+  
+  logic [6:0] ss_c;
   seven_segment_controller mssc(.clk_in(clk_100mhz),
                                 .rst_in(sys_rst),
                                 .val_in(4'hA7B4),
