@@ -10,7 +10,11 @@ module top_level(
   output logic [2:0] rgb1, //rgb led
   output logic spkl, spkr, //speaker outputs
   output logic mic_clk, //microphone clock
-  input wire  mic_data //microphone data
+  input wire  mic_data, //microphone data
+  output logic [3:0] ss0_an,//anode control for upper four digits of seven-seg display
+  output logic [3:0] ss1_an,//anode control for lower four digits of seven-seg display
+  output logic [6:0] ss0_c, //cathode controls for the segments of upper four digits
+  output logic [6:0] ss1_c //cathod controls for the segments of lower four digits
   );
   assign led = sw; //for debugging
   //shut up those rgb LEDs (active high):
@@ -232,6 +236,15 @@ module top_level(
 
   assign spkl = audio_out;
   assign spkr = audio_out;
+
+  seven_segment_controller mssc(.clk_in(clk_100mhz),
+                                .rst_in(sys_rst),
+                                .val_in(4'hA7B4),
+                                .cat_out(ss_c),
+                                .an_out({ss0_an, ss1_an}));
+  
+  assign ss0_c = ss_c; //control upper four digit's cathodes!
+  assign ss1_c = ss_c; //same as above but for lower four digits!
 
 endmodule // top_level
 
