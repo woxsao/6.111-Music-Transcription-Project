@@ -4,7 +4,7 @@
     "xci_name": "xfft_70",
     "component_reference": "xilinx.com:ip:xfft:9.1",
     "ip_revision": "9",
-    "gen_directory": "./ip/xfft_70",
+    "gen_directory": "ip/xfft_70",
     "parameters": {
       "component_parameters": {
         "Component_Name": [ { "value": "xfft_70", "resolve_type": "user", "usage": "all" } ],
@@ -49,7 +49,7 @@
         "C_HAS_NFFT": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_USE_FLT_PT": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_INPUT_WIDTH": [ { "value": "8", "resolve_type": "generated", "format": "long", "usage": "all" } ],
-        "C_TWIDDLE_WIDTH": [ { "value": "16", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "C_TWIDDLE_WIDTH": [ { "value": "8", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_OUTPUT_WIDTH": [ { "value": "8", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_HAS_SCALING": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_HAS_BFP": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
@@ -87,7 +87,7 @@
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
         "IPREVISION": [ { "value": "9" } ],
         "MANAGED": [ { "value": "TRUE" } ],
-        "OUTPUTDIR": [ { "value": "./ip/xfft_70" } ],
+        "OUTPUTDIR": [ { "value": "ip/xfft_70" } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
         "SWVERSION": [ { "value": "2023.1" } ],

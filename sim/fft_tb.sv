@@ -18,17 +18,17 @@ module fft_tb();
     logic [11:0] peak;
     logic peak_valid;
 
-    cyn_sine_generator_750 sine_inst(
+    sine_generator_750 sine_inst(
         .clk_in(clk_in),
         .rst_in(rst_in),
         .step_in(audio_sample_valid),
-        .amp(tone_750)
+        .amp_out(tone_750)
     );
 
     hanning_window #(8,4096) hann_inst (
         .clk_in(clk_in),
         .rst_in(rst_in),
-        .in_sample(tone_750-128),
+        .in_sample(tone_750),
         .audio_sample_valid(audio_sample_valid),
         .out_sample(in_sample),
         .hanning_sample_valid(hanning_sample_valid)
