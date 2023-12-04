@@ -38,7 +38,7 @@ module fft (
 	    end
     end
 
-    xfft_140 my_fft ( .aclk(clk_in),
+    xfft_70 my_fft ( .aclk(clk_in),
                     .s_axis_data_tdata(fft_data), //in
                     .s_axis_data_tvalid(fft_valid), //in
                     .s_axis_data_tlast(fft_last), //in
