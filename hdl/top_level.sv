@@ -135,6 +135,12 @@ module top_level(
                 .step_in(audio_sample_valid),
                 .amp_out(tone_440));
 
+  logic [7:0] tone_750;
+  sine_generator_750 sine_750(.clk_in(clk_m),
+                .rst_in(sys_rst),
+                .step_in(audio_sample_valid),
+                .amp_out(tone_750));
+
 
   //choose which signal to play:
   logic [7:0] audio_data_sel;
@@ -154,25 +160,27 @@ module top_level(
       audio_data_sel = dec4_out>>>2; //signed
     end
   end
+  // logic [7:0] dec4_into_hw;
+  // assign dec4_into_hw = {dec4_out[15],dec4_out[6:0]};
 
   logic signed [7:0] hw_output;
   logic hw_valid;
   logic signed [24:0] stored_coeff;
   hanning_window hw(
-                    .clk_in(clk_m),
-                    .rst_in(sys_rst),
-                    //.in_sample(dec4_out>>>8),
-                    .in_sample(tone_440),
-		    .audio_sample_valid(dec4_out_ready),
-                    .out_sample(hw_output),
-                    .hanning_sample_valid(hw_valid),
-                    .stored_coeff(stored_coeff)
-                    );
+              .clk_in(clk_m),
+              .rst_in(sys_rst),
+              .in_sample(tone_750),
+              //.in_sample(tone_750),
+              .audio_sample_valid(dec4_out_ready),
+              .out_sample(hw_output),
+              .hanning_sample_valid(hw_valid),
+              .stored_coeff(stored_coeff)
+              );
   logic fft_ready;
   logic fft_out_ready;
   logic fft_out_valid;
   logic fft_out_last;
-  logic [15:0] fft_out_data;
+  logic [47:0] fft_out_data;
   fft fft_inst(
         .clk_in(clk_m),
         .rst_in(sys_rst),
@@ -243,7 +251,8 @@ module top_level(
   logic [6:0] ss_c;
   seven_segment_controller mssc(.clk_in(clk_m),
                                 .rst_in(sys_rst),
-                                .val_in({peak_out,fft_out_data}),
+                                .val_in(peak_out),
+                                //.val_in({peak_out,dec4_into_hw,dec4_out}),
                                 .cat_out(ss_c),
                                 .an_out({ss0_an, ss1_an}));
   

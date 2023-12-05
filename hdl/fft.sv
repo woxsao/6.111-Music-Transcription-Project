@@ -29,7 +29,7 @@ module fft (
             fft_data <=0;
             fft_data_counter <= 0;
             fft_last <= 0;
-            fft_out_data <= 0;
+            //fft_out_data <= 0;
         end else begin
             if (audio_sample_valid) begin
                 fft_valid <= 1;
