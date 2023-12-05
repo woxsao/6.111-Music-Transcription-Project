@@ -8,7 +8,8 @@ module sine_generator_750 (
   input wire step_in, //trigger a phase step (rate at which you run sine generator)
   output logic signed [7:0] amp_out); //output phase in 2's complement
 
-  parameter PHASE_INCR = 32'b1000_0000_0000_0000_0000_0000_0000_0000>>3; //1/16th of 12 khz is 750 Hz
+  parameter PHASE_INCR = 32'b0000_0110_1010_0000_0011_1001_1101_0011;
+  //parameter PHASE_INCR = 32'b1000_0000_0000_0000_0000_0000_0000_0000>>3; //1/16th of 12 khz is 750 Hz
   logic [31:0] phase;
   logic [7:0] amp;
   logic [7:0] amp_pre;

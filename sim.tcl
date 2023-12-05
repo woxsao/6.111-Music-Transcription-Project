@@ -6,7 +6,8 @@ read_verilog  [ glob ./hdl/*.v ]
 read_mem [ glob ./data/*.mem ]
 read_verilog -sv [ glob ./sim/fft_tb.sv ]
 
-read_ip ./ip/xfft_140/xfft_140.xci
+read_ip ./ip/clk_wiz_69632/clk_wiz_69632.xci
+read_ip ./ip/xfft_70_unscaled/xfft_70_unscaled.xci
 generate_target all [get_ips]
 synth_ip [get_ips]
 

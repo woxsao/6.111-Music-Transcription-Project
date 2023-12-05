@@ -11,7 +11,7 @@ module fft_tb();
     logic fft_out_ready;
     logic fft_out_valid;
     logic fft_out_last;
-    logic [15:0] fft_out_data;
+    logic [47:0] fft_out_data;
     logic signed [7:0] tone_750;
     logic hanning_sample_valid;
     //logic [15:0] rand_data;

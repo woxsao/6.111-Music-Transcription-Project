@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# Vivado v2023.1 (64-bit)
+# SW Build 3865809 on Sun May  7 15:04:56 MDT 2023
+# IP Build 3864474 on Sun May  7 20:36:21 MDT 2023
+# SharedData Build 3865790 on Sun May 07 13:33:03 MDT 2023
+# Start of session at: Tue Dec  5 14:17:15 2023
+# Process ID: 1161062
+# Current directory: /home/zcynthia/final_folder/new/6.111-Music-Transcription-Project/hdl
+# Command line: vivado -mode batch -source sim.tcl
+# Log file: /home/zcynthia/final_folder/new/6.111-Music-Transcription-Project/hdl/vivado.log
+# Journal file: /home/zcynthia/final_folder/new/6.111-Music-Transcription-Project/hdl/vivado.jou
+# Running On: eecs-digital-35, OS: Linux, CPU Frequency: 1324.932 MHz, CPU Physical cores: 16, Host memory: 33318 MB
+#-----------------------------------------------------------
+source sim.tcl
