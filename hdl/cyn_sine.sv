@@ -2,7 +2,7 @@
 `default_nettype none // prevents system from inferring an undeclared logic (good practice)
 
 //Sine Wave Generator
-module sine_generator_750 (
+module cyn_sine_generator_750 (
   input wire clk_in,
   input wire rst_in, //clock and reset
   input wire step_in, //trigger a phase step (rate at which you run sine generator)

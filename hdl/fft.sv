@@ -19,23 +19,23 @@ module fft (
     logic [11:0] fft_data_counter;
 
     always_ff @(posedge clk_in)begin
-	if (rst_in) begin
-	    fft_valid <= 0;
-	    fft_data <=0;
-	    fft_data_counter <= 0;
-	    fft_last <= 0;
-            fft_out_data <= 0;
+        if (rst_in) begin
+            fft_valid <= 0;
+            fft_data <=0;
+            fft_data_counter <= 0;
+            fft_last <= 0;
+            //fft_out_data <= 0;
         end else begin
-       	    if (audio_sample_valid) begin
-                fft_valid = 1;
-                fft_data = {8'b0,in_sample};
+            if (audio_sample_valid) begin
+                fft_valid <= 1;
+                fft_data <= {8'b0,in_sample};
                 fft_data_counter <= fft_data_counter +1; //rollover-auto
                 fft_last <= fft_data_counter==4095;
-		fft_out_ready <= 1;
+                fft_out_ready <= 1;
             end else begin
-                fft_valid = 0;
+                fft_valid <= 0;
             end
-	    end
+        end
     end
 
     xfft_70 my_fft ( .aclk(clk_in),

@@ -157,13 +157,15 @@ module top_level(
 
   logic signed [7:0] hw_output;
   logic hw_valid;
+  logic signed [24:0] stored_coeff;
   hanning_window hw(
                     .clk_in(clk_m),
                     .rst_in(sys_rst),
-                    .in_sample(dec4_out),
+                    .in_sample(dec4_out>>>8),
                     .audio_sample_valid(dec4_out_ready),
                     .out_sample(hw_output),
-                    .hanning_sample_valid(hw_valid)
+                    .hanning_sample_valid(hw_valid),
+                    .stored_coeff(stored_coeff)
                     );
   logic fft_ready;
   logic fft_out_ready;
@@ -240,7 +242,7 @@ module top_level(
   logic [6:0] ss_c;
   seven_segment_controller mssc(.clk_in(clk_m),
                                 .rst_in(sys_rst),
-                                .val_in(peak_out),
+                                .val_in(fft_out_data),
                                 .cat_out(ss_c),
                                 .an_out({ss0_an, ss1_an}));
   
