@@ -32,20 +32,61 @@ module image_sprite #(
   note_locator where (.note_in(notes[{system,block}]), .disp_out(dis));
 
   logic sharp;
-  assign sharp = (notes[{system,block}]==6'b100001)||//C#
-                 (notes[{system,block}]==6'b100011)||//D#
-                 (notes[{system,block}]==6'b100110)||//F#
-                 (notes[{system,block}]==6'b101000)||//G#
-                 (notes[{system,block}]==6'b101010)||//A#
-                 (notes[{system,block}]==6'b101101)||//C#
-                 (notes[{system,block}]==6'b101111)||//D#
-                 (notes[{system,block}]==6'b110010)||//F#
-                 (notes[{system,block}]==6'b110100);//G#
+  assign sharp = (notes[{system,block}]==6'b100001)||//C#4
+                 (notes[{system,block}]==6'b100011)||//D#4
+                 (notes[{system,block}]==6'b100110)||//F#4
+                 (notes[{system,block}]==6'b101000)||//G#4
+                 (notes[{system,block}]==6'b101010)||//A#4
+                 (notes[{system,block}]==6'b101101)||//C#5
+                 (notes[{system,block}]==6'b101111)||//D#5
+                 (notes[{system,block}]==6'b110010)||//F#5
+                 (notes[{system,block}]==6'b110100);//G#5
+
+  logic nat;
+  assign nat = (notes[{system,block}]==6'b100000)||//C4
+               (notes[{system,block}]==6'b100010)||//D4
+               (notes[{system,block}]==6'b100101)||//F4
+               (notes[{system,block}]==6'b100111)||//G4
+               (notes[{system,block}]==6'b101001)||//A4
+               (notes[{system,block}]==6'b101100)||//C5
+               (notes[{system,block}]==6'b101110)||//D5
+               (notes[{system,block}]==6'b110001)||//F5
+               (notes[{system,block}]==6'b110011);//G5
+
+  logic show_sharp;
+  logic show_natural;
+  logic found;
+  always_comb begin
+    if (sharp || nat) begin
+      found = 0;
+      for (integer i=0;i<8;i=i+1) begin
+        if (~found) begin
+          if ({system,block}%8==i) begin
+            show_sharp = sharp;
+            show_natural = 0;
+            found = 1;
+          end else if (notes[{system,block}-(i+1)]==notes[{system,block}]) begin
+            show_sharp = 0;
+            show_natural = 0;
+            found = 1;
+          end else if (sharp && notes[{system,block}-(i+1)]==(notes[{system,block}]-1)) begin
+            show_sharp = 1;
+            show_natural = 0;
+            found = 1;
+          end else if (nat && notes[{system,block}-(i+1)]==(notes[{system,block}]+1)) begin
+            show_natural = 1;
+            show_sharp = 0;
+            found = 1;
+          end
+        end
+      end
+    end else begin show_sharp = 0; show_natural = 0; end
+  end
 
   always_comb begin //duration detector & memory adressing
     if (in_staff) begin
       if (hcount_in<128) begin//treble clef
-        image_addr = 100*WIDTH*12+((vcount_in-100)%100)*32+(hcount_in-96);
+        image_addr = 100*WIDTH*10+((vcount_in-100)%100)*32+(hcount_in-96);
 
       end else begin
         block = (hcount_in-128)>>5;
@@ -58,20 +99,20 @@ module image_sprite #(
             if (~(notes[{system,block}+1][5])) begin//checks and of 1
               if (~(notes[{system,block}+2][5]||notes[{system,block}+3][5])) begin//checks beat 2
                 if (~(notes[{system,block}+4][5]||notes[{system,block}+5][5]||notes[{system,block}+6][5]||notes[{system,block}+7][5])) begin//checks beats 3 and 4
-                  image_addr = 100*WIDTH*5+(vcount_in%100)*32+(hcount_in%32);//whole rest
-                end else begin image_addr = 100*WIDTH*6+(vcount_in%100)*32+(hcount_in%32); end//half rest
-              end else begin image_addr = 100*WIDTH*8+(vcount_in%100)*32+(hcount_in%32); end//quarter rest
-            end else begin image_addr = 100*WIDTH*9+(vcount_in%100)*32+(hcount_in%32); end//eighth rest
+                  image_addr = 100*WIDTH*4+(vcount_in%100)*32+(hcount_in%32);//whole rest
+                end else begin image_addr = 100*WIDTH*5+(vcount_in%100)*32+(hcount_in%32); end//half rest
+              end else begin image_addr = 100*WIDTH*6+(vcount_in%100)*32+(hcount_in%32); end//quarter rest
+            end else begin image_addr = 100*WIDTH*7+(vcount_in%100)*32+(hcount_in%32); end//eighth rest
           end
 
           else if ({system,block}%4==2) begin//two and four
             if (~(notes[{system,block}+1][5])) begin//checks and
               if (~(notes[{system,block}-1][5]||notes[{system,block}-2][5])) begin image_addr = 0; end//checks past beat in case of half or whole note
               else begin
-                image_addr = 100*WIDTH*8+(vcount_in%100)*32+(hcount_in%32);//quarter rest
+                image_addr = 100*WIDTH*6+(vcount_in%100)*32+(hcount_in%32);//quarter rest
               end
             end else begin
-              image_addr = 100*WIDTH*9+(vcount_in%100)*32+(hcount_in%32);//eighth rest
+              image_addr = 100*WIDTH*7+(vcount_in%100)*32+(hcount_in%32);//eighth rest
             end
           end
 
@@ -80,16 +121,14 @@ module image_sprite #(
               if (~(notes[{system,block}+2][5]||notes[{system,block}+3][5])) begin//checks beat 4
                 if (~(notes[{system,block}-4][5]||notes[{system,block}-3][5]||notes[{system,block}-2][5]||notes[{system,block}-1][5])) begin//checks beats 1 and 2
                   image_addr = 0;//part of whole rest
-                end else begin image_addr = 100*WIDTH*6+(vcount_in%100)*32+(hcount_in%32); end//half rest
-              end else begin image_addr = 100*WIDTH*8+(vcount_in%100)*32+(hcount_in%32); end//quarter rest
-            end else begin image_addr = 100*WIDTH*9+(vcount_in%100)*32+(hcount_in%32); end//eighth rest
+                end else begin image_addr = 100*WIDTH*5+(vcount_in%100)*32+(hcount_in%32); end//half rest
+              end else begin image_addr = 100*WIDTH*6+(vcount_in%100)*32+(hcount_in%32); end//quarter rest
+            end else begin image_addr = 100*WIDTH*7+(vcount_in%100)*32+(hcount_in%32); end//eighth rest
           end
 
           else if ({system,block}%2==1) begin//ands
             if (notes[{system,block}-1][5]==0) begin image_addr = 0; end
-            else begin image_addr = 100*WIDTH*9+(vcount_in%100)*32+(hcount_in%32); end
-          end else begin
-            image_addr = 100*WIDTH*9+(vcount_in%100)*32+(hcount_in%32);
+            else begin image_addr = 100*WIDTH*7+(vcount_in%100)*32+(hcount_in%32); end
           end
         end 
         
@@ -101,18 +140,18 @@ module image_sprite #(
                 if (notes[{system,block}+4]==notes[{system,block}] && notes[{system,block}+5]==notes[{system,block}] && notes[{system,block}+6]==notes[{system,block}] && notes[{system,block}+7]==notes[{system,block}]) begin//checks beats 3 and 4
                   image_addr = (vcount_in%100)*32+(hcount_in%32)+dis*WIDTH;//whole note
                 end else begin image_addr = 100*WIDTH*1+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//half note
-              end else begin image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//quarter note
-            end else begin image_addr = 100*WIDTH*4+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//eighth note
+              end else begin image_addr = 100*WIDTH*2+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//quarter note
+            end else begin image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//eighth note
           end
 
           else if ({system,block}%4==2) begin//two and four
             if (notes[{system,block}+1]==notes[{system,block}]) begin//checks and
               if (notes[{system,block}-2]==notes[{system,block}] && notes[{system,block}-1]==notes[{system,block}]) begin image_addr = 0; end//checks past beat in case of half or whole note
               else begin
-                image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH;//quarter note
+                image_addr = 100*WIDTH*2+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH;//quarter note
               end
             end else begin
-              image_addr = 100*WIDTH*4+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH;//eighth note
+              image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH;//eighth note
             end
           end
 
@@ -122,18 +161,19 @@ module image_sprite #(
                 if (notes[{system,block}-4]==notes[{system,block}] && notes[{system,block}-3]==notes[{system,block}] && notes[{system,block}-2]==notes[{system,block}] && notes[{system,block}-1]==notes[{system,block}]) begin//checks beats 3 and 4
                   image_addr = 0;//part of whole note
                 end else begin image_addr = 100*WIDTH*1+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//half note
-              end else begin image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//quarter note
-            end else begin image_addr = 100*WIDTH*4+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//eighth note
+              end else begin image_addr = 100*WIDTH*2+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//quarter note
+            end else begin image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end//eighth note
           end
 
           else if ({system,block}%2==1) begin//ands
             if (notes[{system,block}-1]==notes[{system,block}]) begin image_addr = 0; end
-            else begin image_addr = 100*WIDTH*4+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end
-          end else begin
-            image_addr = 100*WIDTH*4+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH;
+            else begin image_addr = 100*WIDTH*3+(vcount_in%100)*32+(hcount_in%32)+dis*WIDTH; end
           end
-          if (sharp && (image_addr!=0) && (vcount_in%100)<77) begin
-            sharp_addr = 100*WIDTH*11+((vcount_in%100)*32+(hcount_in%32)+dis*WIDTH);
+
+          if (show_sharp && (image_addr!=0) && (vcount_in%100)<77) begin//sharp and natural symbols
+            sharp_addr = 100*WIDTH*9+((vcount_in%100)*32+(hcount_in%32)+dis*WIDTH);
+          end else if (show_natural && (image_addr!=0)) begin
+            sharp_addr = 100*WIDTH*8+((vcount_in%100)*32+(hcount_in%32)+dis*WIDTH);
           end else begin
             sharp_addr = 0;
           end
@@ -155,26 +195,6 @@ module image_sprite #(
                           (vcount_in % 100>=33&&vcount_in % 100<=65&&(hcount_in+128) % 256==0&&hcount_in!=128)||//measure lines
                           (vcount_in % 100 == 25 && hcount_in>128 && hcount_in%32 >= 11 && hcount_in%32 <= 28 && notes[{system,block}] == 6'b110101 && image_addr!=0) ||//line above staff for A5
                           (vcount_in % 100 == 73 && hcount_in>128 && hcount_in%32 >= 11 && hcount_in%32 <= 28 && (notes[{system,block}] == 6'b100000 || notes[{system,block}] == 6'b100001) && image_addr!=0));//line below staff for C
-
-
-/*
-logic [10:0] hcount_pipe [4-1:0];
-always_ff @(posedge pixel_clk_in)begin
-  hcount_pipe[0] <= hcount_in;
-  for (int i=1; i<4; i = i+1)begin
-    hcount_pipe[i] <= hcount_pipe[i-1];
-  end
-end
-
-logic [9:0] vcount_pipe [4-1:0];
-always_ff @(posedge pixel_clk_in)begin
-  vcount_pipe[0] <= vcount_in;
-  for (int i=1; i<4; i = i+1)begin
-    vcount_pipe[i] <= vcount_pipe[i-1];
-  end
-end
-*/
-
   
   logic [7:0] color;
   logic [23:0] full_color;
@@ -249,5 +269,6 @@ end
   assign red_out =    staff_lines ? 0 : full_color[23:16]&sharp_full_color[23:16];
   assign green_out =  staff_lines ? 0 : full_color[15:8]&sharp_full_color[15:8];
   assign blue_out =   staff_lines ? 0 : full_color[7:0]&sharp_full_color[7:0];
+
 endmodule
 `default_nettype none

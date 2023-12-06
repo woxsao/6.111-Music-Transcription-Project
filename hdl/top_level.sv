@@ -35,20 +35,13 @@ module top_level(
   logic clk_locked;
 
   hdmi_clk_wiz_720p mhdmicw (.clk_pixel(clk_pixel),.clk_tmds(clk_5x),.clk_100(clk_100_2),
-          .reset(0), .locked(pix_locked), .clk_ref(clk_m));
+          .reset(0), .locked(pix_locked), .clk_ref(clk_100mhz));
+
   clk_wiz_69632 macw (.reset(sys_rst),
                       .clk_in1(clk_100_2),
                       .clk_out1(clk_m),
                       .locked(clk_locked)
                     );
-
-  logic [10:0] hcount;
-  logic [9:0] vcount;
-  logic vert_sync;
-  logic hor_sync;
-  logic active_draw;
-  logic new_frame;
-  logic [5:0] frame_count;
 
   logic record; //signal used to trigger recording
   //definitely want this debounced:
@@ -218,6 +211,15 @@ module top_level(
   assign spkl = audio_out;
   assign spkr = audio_out;
 
+  //signals related to driving the video pipeline
+  logic [10:0] hcount;
+  logic [9:0] vcount;
+  logic vert_sync;
+  logic hor_sync;
+  logic active_draw;
+  logic new_frame;
+  logic [5:0] frame_count;
+
   video_sig_gen mvg(
       .clk_pixel_in(clk_pixel),
       .rst_in(sys_rst),
@@ -229,7 +231,8 @@ module top_level(
       .nf_out(new_frame),
       .fc_out(frame_count));
 
-  logic [7:0] img_red, img_green, img_blue;
+  logic [7:0] red, green, blue;
+
   logic [159:0][5:0] notes;
   //jonathan joestar's theme
   logic [159:0][5:0] joestar;
@@ -255,15 +258,9 @@ module top_level(
     .hcount_in(hcount),   //TODO: needs to use pipelined signal (PS1)
     .vcount_in(vcount),   //TODO: needs to use pipelined signal (PS1)
     .notes(notes),
-    .red_out(img_red),
-    .green_out(img_green),
-    .blue_out(img_blue));
-
-  logic [7:0] red, green, blue;
-
-  assign red = img_red;
-  assign green = img_green;
-  assign blue = img_blue;
+    .red_out(red),
+    .green_out(green),
+    .blue_out(blue));
 
   logic [9:0] tmds_10b [0:2]; //output of each TMDS encoder!
   logic tmds_signal [2:0]; //output of each TMDS serializer!

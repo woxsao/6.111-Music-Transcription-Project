@@ -112,7 +112,7 @@ wire clk_in2_clk_wiz_0;
   wire        clkfboutb_unused;
     wire clkout0b_unused;
    wire clkout1b_unused;
-  wire clkout2_bakk;
+   wire clkout2_unused;
    wire clkout2b_unused;
    wire clkout3_unused;
    wire clkout3b_unused;
@@ -140,13 +140,7 @@ wire clk_in2_clk_wiz_0;
     .CLKOUT1_PHASE        (0.000),
     .CLKOUT1_DUTY_CYCLE   (0.500),
     .CLKOUT1_USE_FINE_PS  ("FALSE"),
-    .CLKIN1_PERIOD        (10.000)
-    //,
-    //.CLKOUT2_DIVIDE       (7.425),
-    //.CLKOUT2_PHASE        (0.000),
-    //.CLKOUT2_DUTY_CYCLE   (0.500),
-    //.CLKOUT2_USE_FINE_PS  ("FALSE")
-    )
+    .CLKIN1_PERIOD        (10.000))
   mmcm_adv_inst
     // Output clocks
    (
@@ -156,7 +150,7 @@ wire clk_in2_clk_wiz_0;
     .CLKOUT0B            (clkout0b_unused),
     .CLKOUT1             (clk_tmds_clk_wiz_0),
     .CLKOUT1B            (clkout1b_unused),
-    .CLKOUT2             (clkout2_bakk),
+    .CLKOUT2             (clkout2_unused),
     .CLKOUT2B            (clkout2b_unused),
     .CLKOUT3             (clkout3_unused),
     .CLKOUT3B            (clkout3b_unused),
@@ -211,6 +205,6 @@ wire clk_in2_clk_wiz_0;
 
   BUFG clkout3_buf
    (.O   (clk_100),
-    .I   (clk_ref));
+    .I   (clk_ref_clk_wiz_0));
 
 endmodule
