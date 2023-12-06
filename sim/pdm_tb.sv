@@ -37,7 +37,9 @@ module chained_dec_tb();
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
     //{16'b1111111110000001}
     //?16'b0000000100000000 : 16'b0
-                        .audio_in(pdm_out?16'b0000000001111111:16'b1111111110000001),
+                        //.audio_in(pdm_out?16'b0000000001111111:16'b1111111110000001),
+                        .audio_in(pdm_out?16'b0000000001111111:0),
+                        //.audio_in(tone_750),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_in),
                         .dec_output(dec1_out),
@@ -68,30 +70,37 @@ module chained_dec_tb();
                         .dec_output_ready(dec4_out_ready));
   logic signed [7:0] hw_output;
   logic hw_valid;
+
+  logic signed [7:0] truncated;
+  logic signed [7:0] concat;
+  logic signed [7:0] shifted;
+  assign truncated = dec4_out;
+  assign concat = {dec4_out[15],dec4_out[6:0]};
+  assign shifted = dec4_out>>>8;
   hanning_window hw(
                     .clk_in(clk_in),
                     .rst_in(sys_rst),
-                    .in_sample(dec4_out),
-                    .audio_sample_valid(dec4_out_ready),
+                    .in_sample(dec4_out>>>8),
+                    .audio_sample_valid(dec3_out_ready),
                     .out_sample(hw_output),
                     .hanning_sample_valid(hw_valid)
                     );
-  logic fft_ready;
-  logic fft_out_ready;
-  logic fft_out_valid;
-  logic fft_out_last;
-  logic [15:0] fft_out_data;
-  fft fft_inst(
-        .clk_in(clk_in),
-        .rst_in(rst_in),
-        .in_sample(hw_output),
-        .audio_sample_valid(hw_valid),
-        .fft_ready(fft_ready),
-        .fft_out_ready(fft_out_ready),
-        .fft_out_valid(fft_out_valid),
-        .fft_out_last(fft_out_last),
-        .fft_out_data(fft_out_data)
-    );
+  // logic fft_ready;
+  // logic fft_out_ready;
+  // logic fft_out_valid;
+  // logic fft_out_last;
+  // logic [15:0] fft_out_data;
+  // fft fft_inst(
+  //       .clk_in(clk_in),
+  //       .rst_in(rst_in),
+  //       .in_sample(hw_output),
+  //       .audio_sample_valid(hw_valid),
+  //       .fft_ready(fft_ready),
+  //       .fft_out_ready(fft_out_ready),
+  //       .fft_out_valid(fft_out_valid),
+  //       .fft_out_last(fft_out_last),
+  //       .fft_out_data(fft_out_data)
+  //   );
   always begin
       #5;  //every 5 ns switch...so period of clock is 10 ns...100 MHz clock
       clk_in = !clk_in;
@@ -150,7 +159,7 @@ module chained_dec_tb();
   end
   //initial block...this is our test simulation
   initial begin
-    $dumpfile("pdm_tb.vcd"); //file to store value change dump (vcd)
+    $dumpfile("pdm_tb0.vcd"); //file to store value change dump (vcd)
     $dumpvars(0,chained_dec_tb);
     $display("Starting Sim"); //print nice message at start
     clk_in = 0;

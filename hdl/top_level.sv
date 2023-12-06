@@ -51,13 +51,22 @@ module top_level(
   logic [7:0] pdm_tally;
   logic [8:0] pdm_counter;
 
-
+  logic pdm_out;
+  pdm uut
+          ( .clk_in(clk_m),
+            .rst_in(sys_rst),
+            .level_in(tone_440),
+            .tick_in(pdm_signal_valid),
+            .pdm_out(pdm_out)
+          );
 
   logic signed [15:0] dec1_out;
   logic dec1_out_ready;
   logic signed [15:0] fir1_out;
   fir_decimator #(16) fir_dec1(.rst_in(sys_rst),
-                        .audio_in(mic_data?16'b0000000001111111:0),
+                        //.audio_in(pdm_out?16'b0000000001111111:0),
+                        .audio_in(mic_data?16'b0000000001111111:16'b1111111110000000),
+                        //.audio_in(tone_750),
                         .audio_sample_valid(pdm_signal_valid),
                         .clk_in(clk_m),
                         .dec_output(dec1_out),
@@ -157,7 +166,7 @@ module top_level(
     end else if (sw[7])begin
       audio_data_sel = dec3_out; //signed
     end else begin
-      audio_data_sel = dec4_out>>>2; //signed
+      audio_data_sel = dec4_out>>>8; //signed
     end
   end
   // logic [7:0] dec4_into_hw;
@@ -169,7 +178,7 @@ module top_level(
   hanning_window hw(
               .clk_in(clk_m),
               .rst_in(sys_rst),
-              .in_sample(tone_750),
+              .in_sample(dec4_out>>>8),
               //.in_sample(tone_750),
               .audio_sample_valid(dec4_out_ready),
               .out_sample(hw_output),
@@ -251,7 +260,7 @@ module top_level(
   logic [6:0] ss_c;
   seven_segment_controller mssc(.clk_in(clk_m),
                                 .rst_in(sys_rst),
-                                .val_in(peak_out),
+                                .val_in({peak_out,dec4_out>>>8}),
                                 //.val_in({peak_out,dec4_into_hw,dec4_out}),
                                 .cat_out(ss_c),
                                 .an_out({ss0_an, ss1_an}));

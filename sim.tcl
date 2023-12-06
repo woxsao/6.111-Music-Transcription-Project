@@ -19,7 +19,3 @@ log_vcd *
 run all
 flush_vcd
 close_vcd
-~                                                                                                                                  
-~                                                                                                                                  
-~                                                                                                                                  
-"sim.tcl" 20L, 405B                                                                                              6,21          All
