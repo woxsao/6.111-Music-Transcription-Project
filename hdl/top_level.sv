@@ -14,7 +14,10 @@ module top_level(
   output logic [3:0] ss0_an,//anode control for upper four digits of seven-seg display
   output logic [3:0] ss1_an,//anode control for lower four digits of seven-seg display
   output logic [6:0] ss0_c, //cathode controls for the segments of upper four digits
-  output logic [6:0] ss1_c //cathod controls for the segments of lower four digits
+  output logic [6:0] ss1_c, //cathod controls for the segments of lower four digits
+  output logic [2:0] hdmi_tx_p, //hdmi output signals (blue, green, red)
+  output logic [2:0] hdmi_tx_n, //hdmi output signals (negatives)
+  output logic hdmi_clk_p, hdmi_clk_n //differential hdmi clock
   );
   assign led = sw; //for debugging
   //shut up those rgb LEDs (active high):
@@ -26,9 +29,14 @@ module top_level(
 
   logic clk_m;
   logic clk_locked;
+  logic clk_pixel, clk_5x, clk_100_2; //clock lines
+  logic pix_locked;
+  
+  hdmi_clk_wiz_720p mhdmicw (.clk_pixel(clk_pixel),.clk_tmds(clk_5x),.clk_100(clk_100_2),
+          .reset(0), .locked(pix_locked), .clk_ref(clk_100mhz));
   //audio_clk_wiz macw (.clk_in(clk_100mhz), .clk_out(clk_m)); //98.3MHz
   clk_wiz_69632 macw (.reset(sys_rst),
-                      .clk_in1(clk_100mhz),
+                      .clk_in1(clk_100_2),
                       .clk_out1(clk_m),
                       .locked(clk_locked)
                     ); //69.632 MHz
@@ -267,6 +275,116 @@ module top_level(
   
   assign ss0_c = ss_c; //control upper four digit's cathodes!
   assign ss1_c = ss_c; //same as above but for lower four digits!
+
+  //signals related to driving the video pipeline
+  logic [10:0] hcount;
+  logic [9:0] vcount;
+  logic vert_sync;
+  logic hor_sync;
+  logic active_draw;
+  logic new_frame;
+  logic [5:0] frame_count;
+
+  video_sig_gen mvg(
+      .clk_pixel_in(clk_pixel),
+      .rst_in(sys_rst),
+      .hcount_out(hcount),
+      .vcount_out(vcount),
+      .vs_out(vert_sync),
+      .hs_out(hor_sync),
+      .ad_out(active_draw),
+      .nf_out(new_frame),
+      .fc_out(frame_count));
+
+  logic [7:0] red, green, blue;
+
+  logic [159:0][5:0] notes;
+  //jonathan joestar's theme
+  logic [159:0][5:0] joestar;
+  jojo part1 (.jonathan(joestar));
+
+  //never gonna give you up
+  logic [159:0][5:0] rouse;
+  rick astley(.ricky(rouse));
+  
+  always_comb begin
+    case(sw[1:0])
+      1'b10: notes = joestar;
+      1'b11: notes = rouse;
+      default: notes = 0;
+    endcase
+  end
+
+  image_sprite #(
+    .WIDTH(32),
+    .HEIGHT(100*13))
+    com_sprite_m (
+    .pixel_clk_in(clk_pixel),
+    .rst_in(sys_rst),
+    .hcount_in(hcount),
+    .vcount_in(vcount),
+    .notes(notes),
+    .red_out(red),
+    .green_out(green),
+    .blue_out(blue));
+
+  logic [9:0] tmds_10b [0:2]; //output of each TMDS encoder!
+  logic tmds_signal [2:0]; //output of each TMDS serializer!
+
+  //three tmds_encoders (blue, green, red)
+  //blue should have {vert_sync and hor_sync for control signals)
+  //red and green have nothing
+  tmds_encoder tmds_red(
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst),
+    .data_in(red),
+    .control_in(2'b0),
+    .ve_in(active_draw),
+    .tmds_out(tmds_10b[2]));
+
+  tmds_encoder tmds_green(
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst),
+    .data_in(green),
+    .control_in(2'b0),
+    .ve_in(active_draw),
+    .tmds_out(tmds_10b[1]));
+
+  tmds_encoder tmds_blue(
+    .clk_in(clk_pixel),
+    .rst_in(sys_rst),
+    .data_in(blue),
+    .control_in({vert_sync,hor_sync}),
+    .ve_in(active_draw),
+    .tmds_out(tmds_10b[0]));
+  
+  //four tmds_serializers (blue, green, red, and clock)
+  tmds_serializer red_ser(
+    .clk_pixel_in(clk_pixel),
+    .clk_5x_in(clk_5x),
+    .rst_in(sys_rst),
+    .tmds_in(tmds_10b[2]),
+    .tmds_out(tmds_signal[2]));
+
+  tmds_serializer green_ser(
+    .clk_pixel_in(clk_pixel),
+    .clk_5x_in(clk_5x),
+    .rst_in(sys_rst),
+    .tmds_in(tmds_10b[1]),
+    .tmds_out(tmds_signal[1]));
+
+  tmds_serializer blue_ser(
+    .clk_pixel_in(clk_pixel),
+    .clk_5x_in(clk_5x),
+    .rst_in(sys_rst),
+    .tmds_in(tmds_10b[0]),
+    .tmds_out(tmds_signal[0]));
+
+  //output buffers generating differential signal:
+  OBUFDS OBUFDS_blue (.I(tmds_signal[0]), .O(hdmi_tx_p[0]), .OB(hdmi_tx_n[0]));
+  OBUFDS OBUFDS_green(.I(tmds_signal[1]), .O(hdmi_tx_p[1]), .OB(hdmi_tx_n[1]));
+  OBUFDS OBUFDS_red  (.I(tmds_signal[2]), .O(hdmi_tx_p[2]), .OB(hdmi_tx_n[2]));
+  OBUFDS OBUFDS_clock(.I(clk_pixel), .O(hdmi_clk_p), .OB(hdmi_clk_n));
 
 endmodule // top_level
 
