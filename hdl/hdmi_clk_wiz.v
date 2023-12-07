@@ -72,6 +72,7 @@ module hdmi_clk_wiz_720p
   output        clk_pixel,
   output        clk_tmds,
   output        clk_100,
+  output        anotherone,
   // Status and control signals
   input         reset,
   output        locked,
@@ -205,6 +206,10 @@ wire clk_in2_clk_wiz_0;
 
   BUFG clkout3_buf
    (.O   (clk_100),
+    .I   (clk_ref_clk_wiz_0));
+
+  BUFG clkout4_buf
+   (.O   (anotherone),
     .I   (clk_ref_clk_wiz_0));
 
 endmodule

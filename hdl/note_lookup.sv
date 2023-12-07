@@ -34,40 +34,39 @@ module note_lookup(
         bin_floor[19] = 377;
         bin_floor[20] = 400;
         bin_floor[21] = 424;
+        bin_floor[22] = 449;
 
 
     end
     logic [4:0] counter;
-    logic found;
     logic finding;
     always_ff @(posedge clk_in) begin
         if(rst_in)begin
             note_index <= 0;
             counter <= 0;
-            found <= 0;
             finding <= 0;
         end
         else begin
-            if(ready_in && ~finding)begin
-                counter <= 0;
-                found <= 1'b0;
-                finding <= 1'b1;
-            end
-            else if(finding && (bin_floor[counter]>=bin_index) && ~found)begin
-                if(counter == 0)begin
-                    note_index <= 0;
+            if(bin_index<120) begin 
+                note_index <= 0;
+            end else begin
+                if(ready_in && ~finding)begin
+                    counter <= 0;
+                    finding <= 1'b1;
                 end
-                if (counter >= 212)begin
-                    note_index <= {1'b1, 8'b11010100};
+                else if(finding)begin
+                    if (counter > 21) begin
+                        finding <= 0;
+                        note_index <= 0;
+                        counter <= 0;
+                    end else begin
+                        if (bin_floor[counter+1] >= bin_index && bin_index >= bin_floor[counter]) begin
+                        note_index <= {1'b1,counter};
+                        finding <= 0;
+                        end
+                        counter <= counter + 1;
+                    end
                 end
-                else begin
-                    note_index <= {1'b1,counter};
-                end
-                found <= 1'b1;
-                finding <= 0;
-            end
-            else if(finding) begin
-                counter <= counter + 1;
             end
         end
     end
