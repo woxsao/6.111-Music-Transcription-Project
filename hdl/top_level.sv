@@ -318,6 +318,12 @@ module top_level(
                        .bin_index(peak_out),
                        .ready_in(peak_valid_out),
                        .note_index(curr_note));
+  
+  note_write writing (.clk_in(clk_m),
+                       .rst_in(sys_rst),
+                       .toggle_in(sw[3]),
+                       .note_in(curr_note),
+                       .notes_out(data_notes));
 
   always_ff @(posedge clk_m) begin
     if (sys_rst) begin

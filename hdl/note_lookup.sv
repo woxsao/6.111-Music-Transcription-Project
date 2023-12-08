@@ -35,9 +35,8 @@ module note_lookup(
         bin_floor[20] = 400;
         bin_floor[21] = 424;
         bin_floor[22] = 449;
-
-
     end
+
     logic [4:0] counter;
     logic finding;
     always_ff @(posedge clk_in) begin
@@ -70,7 +69,7 @@ module note_lookup(
             end
         end
     end
-  
+
 endmodule
 
 
