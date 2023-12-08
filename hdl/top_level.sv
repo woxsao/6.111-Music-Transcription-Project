@@ -22,7 +22,7 @@ module top_level(
   //assign led = sw; //for debugging
   //shut up those rgb LEDs (active high):
   assign rgb1= 0;
-  assign rgb0 = writing;
+  assign rgb0 = 0;
 
   logic sys_rst;
   assign sys_rst = btn[0];
@@ -308,9 +308,6 @@ module top_level(
   rick astley(.ricky(rouse));
   
   logic [159:0][5:0] data_notes;
-  logic [25:0] eighth_counter;
-  logic [7:0] eighth_dex;
-  logic writing;
   logic [5:0] curr_note;
   
   note_lookup finding (.clk_in(clk_m),
@@ -319,43 +316,11 @@ module top_level(
                        .ready_in(peak_valid_out),
                        .note_index(curr_note));
   
-  note_write writing (.clk_in(clk_m),
-                       .rst_in(sys_rst),
-                       .toggle_in(sw[3]),
-                       .note_in(curr_note),
-                       .notes_out(data_notes));
-
-  always_ff @(posedge clk_m) begin
-    if (sys_rst) begin
-      writing <= 0;
-      eighth_dex <= 0;
-      eighth_counter <= 0;
-      data_notes <= 0;
-    end else begin
-      if (~writing) begin
-        if (sw[10]) begin
-          writing <= 1;
-          eighth_dex <= 0;
-          eighth_counter <= 0;
-          data_notes <= 0;
-        end
-      end else begin
-        if (~sw[10]) begin
-          writing <= 0;
-          eighth_dex <= 0;
-          eighth_counter <= 0;
-        end else if (eighth_dex<160) begin
-          if (eighth_counter >= 34816000) begin
-            data_notes[eighth_dex] <= curr_note;
-            eighth_dex <= eighth_dex + 1;
-            eighth_counter <= 0;
-          end else begin
-            eighth_counter <= eighth_counter + 1;
-          end
-        end
-      end
-    end
-  end
+  note_write writer (.clk_in(clk_m),
+                     .rst_in(sys_rst),
+                     .toggle_in(sw[3]),
+                     .note_in(curr_note),
+                     .notes_out(data_notes));
 
   always_comb begin
     case(sw[1:0])

@@ -1,12 +1,12 @@
 
-module note_lookup(
+module note_write(
             input wire clk_in,
             input wire rst_in,
             input wire toggle_in,
             input wire [5:0] note_in,
             output logic [159:0][5:0] notes_out
   );
-    logic writing
+    logic writing;
     logic [25:0] eighth_counter;
     logic [7:0] eighth_dex;
 
