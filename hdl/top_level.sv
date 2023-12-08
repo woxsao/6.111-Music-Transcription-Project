@@ -5,6 +5,8 @@ module top_level(
   input wire clk_100mhz,
   input wire [15:0] sw, //all 16 input slide switches
   input wire [3:0] btn, //all four momentary button switches
+  input wire uart_rxd,
+  output logic uart_txd,
   output logic [15:0] led, //16 green output LEDs (located right above switches)
   output logic [2:0] rgb0, //rgb led
   output logic [2:0] rgb1, //rgb led
@@ -17,7 +19,7 @@ module top_level(
   output logic [6:0] ss1_c, //cathod controls for the segments of lower four digits
   output logic [2:0] hdmi_tx_p, //hdmi output signals (blue, green, red)
   output logic [2:0] hdmi_tx_n, //hdmi output signals (negatives)
-  output logic hdmi_clk_p, hdmi_clk_n //differential hdmi clock
+  output logic hdmi_clk_p,hdmi_clk_n //differential hdmi clock
   );
   //assign led = sw; //for debugging
   //shut up those rgb LEDs (active high):
@@ -372,7 +374,17 @@ module top_level(
     .control_in({vert_sync,hor_sync}),
     .ve_in(active_draw),
     .tmds_out(tmds_10b[0]));
-  
+  manta manta_inst (
+        .clk(clk_pixel),
+
+        .rx(uart_rxd),
+        .tx(uart_txd),
+        
+        .val1_in(red), 
+        .val2_in(green), 
+        .val3_in(blue),
+        .hcount(hcount), 
+        .vcount(vcount));
   //four tmds_serializers (blue, green, red, and clock)
   tmds_serializer red_ser(
     .clk_pixel_in(clk_pixel),
