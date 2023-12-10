@@ -14,9 +14,7 @@ module image_sprite #(
   input wire [10:0] hcount_in,
   input wire [9:0] vcount_in,
   input wire [159:0][5:0] notes,
-  output logic [7:0] red_out,
-  output logic [7:0] green_out,
-  output logic [7:0] blue_out
+  output logic [7:0] color_out
   );
 
   logic in_staff;
@@ -32,6 +30,7 @@ module image_sprite #(
   note_locator where (.note_in(notes[{system,block}]), .disp_out(dis));
 
   logic sharp;
+  logic nat;
   assign sharp = (notes[{system,block}]==6'b100001)||//C#4
                  (notes[{system,block}]==6'b100011)||//D#4
                  (notes[{system,block}]==6'b100110)||//F#4
@@ -41,8 +40,6 @@ module image_sprite #(
                  (notes[{system,block}]==6'b101111)||//D#5
                  (notes[{system,block}]==6'b110010)||//F#5
                  (notes[{system,block}]==6'b110100);//G#5
-
-  logic nat;
   assign nat = (notes[{system,block}]==6'b100000)||//C4
                (notes[{system,block}]==6'b100010)||//D4
                (notes[{system,block}]==6'b100101)||//F4
@@ -197,12 +194,7 @@ module image_sprite #(
                           (vcount_in % 100 == 73 && hcount_in>128 && hcount_in%32 >= 9 && hcount_in%32 <= 26 && (notes[{system,block}] == 6'b100000 || notes[{system,block}] == 6'b100001) && image_addr!=0));//line below staff for C
   
   logic color;
-  logic [7:0] full_color;
   logic sharp_color;
-  logic [7:0] sharp_full_color;
-
-  assign full_color = 8'hff*color;
-  assign sharp_full_color = 8'hff*sharp_color;
 
   xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(1),
@@ -227,9 +219,7 @@ module image_sprite #(
     .doutb(sharp_color)
   );
   
-  assign red_out =    staff_lines ? 0 : full_color&sharp_full_color;
-  assign green_out =  staff_lines ? 0 : full_color&sharp_full_color;
-  assign blue_out =   staff_lines ? 0 : full_color&sharp_full_color;
+  assign color_out = staff_lines ? 0 : 8'hff*(color & sharp_color);
 
 endmodule
 `default_nettype none
