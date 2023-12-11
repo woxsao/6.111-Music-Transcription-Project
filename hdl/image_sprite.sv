@@ -8,15 +8,13 @@
 `endif  /* ! SYNTHESIS */
 
 module image_sprite #(
-  parameter WIDTH=32, HEIGHT=100*13) (
+  parameter WIDTH=32, HEIGHT=100*11) (
   input wire pixel_clk_in,
   input wire rst_in,
   input wire [10:0] hcount_in,
   input wire [9:0] vcount_in,
   input wire [159:0][5:0] notes,
-  output logic [7:0] red_out,
-  output logic [7:0] green_out,
-  output logic [7:0] blue_out
+  output logic [7:0] color_out
   );
 
   logic in_staff;
@@ -32,6 +30,7 @@ module image_sprite #(
   note_locator where (.note_in(notes[{system,block}]), .disp_out(dis));
 
   logic sharp;
+  logic nat;
   assign sharp = (notes[{system,block}]==6'b100001)||//C#4
                  (notes[{system,block}]==6'b100011)||//D#4
                  (notes[{system,block}]==6'b100110)||//F#4
@@ -41,8 +40,6 @@ module image_sprite #(
                  (notes[{system,block}]==6'b101111)||//D#5
                  (notes[{system,block}]==6'b110010)||//F#5
                  (notes[{system,block}]==6'b110100);//G#5
-
-  logic nat;
   assign nat = (notes[{system,block}]==6'b100000)||//C4
                (notes[{system,block}]==6'b100010)||//D4
                (notes[{system,block}]==6'b100101)||//F4
@@ -193,82 +190,36 @@ module image_sprite #(
                           (vcount_in % 100 == 57) ||//line 2(G)
                           (vcount_in % 100 == 65) ||//line 1(E)
                           (vcount_in % 100>=33&&vcount_in % 100<=65&&(hcount_in+128) % 256==0&&hcount_in!=128)||//measure lines
-                          (vcount_in % 100 == 25 && hcount_in>128 && hcount_in%32 >= 11 && hcount_in%32 <= 28 && notes[{system,block}] == 6'b110101 && image_addr!=0) ||//line above staff for A5
-                          (vcount_in % 100 == 73 && hcount_in>128 && hcount_in%32 >= 11 && hcount_in%32 <= 28 && (notes[{system,block}] == 6'b100000 || notes[{system,block}] == 6'b100001) && image_addr!=0));//line below staff for C
+                          (vcount_in % 100 == 25 && hcount_in>128 && hcount_in%32 >= 9 && hcount_in%32 <= 26 && notes[{system,block}] == 6'b110101 && image_addr!=0) ||//line above staff for A5
+                          (vcount_in % 100 == 73 && hcount_in>128 && hcount_in%32 >= 9 && hcount_in%32 <= 26 && (notes[{system,block}] == 6'b100000 || notes[{system,block}] == 6'b100001) && image_addr!=0));//line below staff for C
   
-  logic [7:0] color;
-  logic [23:0] full_color;
-  logic [7:0] sharp_color;
-  logic [23:0] sharp_full_color;
-  
-  // Modify the module below to use your BRAMs!
-  xilinx_single_port_ram_read_first #(
-    .RAM_WIDTH(8),                       // Specify RAM data width
-    .RAM_DEPTH(WIDTH*HEIGHT),                     // Specify RAM depth (number of entries)
-    .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
-    .INIT_FILE(`FPATH(image.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
-  ) image (
-    .addra(image_addr),     // Address bus, width determined from RAM_DEPTH
-    .dina(0),       // RAM input data, width determined from RAM_WIDTH
-    .clka(pixel_clk_in),       // Clock
-    .wea(0),         // Write enable
-    .ena(1),         // RAM Enable, for additional power savings, disable port when not in use
-    .rsta(rst_in),       // Output reset (does not affect memory contents)
-    .regcea(1),   // Output register enable
-    .douta(color)      // RAM output data, width determined from RAM_WIDTH
-  );
-  
-  xilinx_single_port_ram_read_first #(
-    .RAM_WIDTH(24),                       // Specify RAM data width
-    .RAM_DEPTH(2),                     // Specify RAM depth (number of entries)
-    .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
-    .INIT_FILE(`FPATH(palette.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
-  ) palette (
-    .addra(color[0]),     // Address bus, width determined from RAM_DEPTH
-    .dina(0),       // RAM input data, width determined from RAM_WIDTH
-    .clka(pixel_clk_in),       // Clock
-    .wea(0),         // Write enable
-    .ena(1),         // RAM Enable, for additional power savings, disable port when not in use
-    .rsta(rst_in),       // Output reset (does not affect memory contents)
-    .regcea(1),   // Output register enable
-    .douta(full_color)      // RAM output data, width determined from RAM_WIDTH
-  );
+  logic color;
+  logic sharp_color;
 
-  xilinx_single_port_ram_read_first #(
-    .RAM_WIDTH(8),                       // Specify RAM data width
-    .RAM_DEPTH(WIDTH*HEIGHT),                     // Specify RAM depth (number of entries)
-    .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
-    .INIT_FILE(`FPATH(image.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
-  ) image2 (
-    .addra(sharp_addr),     // Address bus, width determined from RAM_DEPTH
-    .dina(0),       // RAM input data, width determined from RAM_WIDTH
-    .clka(pixel_clk_in),       // Clock
-    .wea(0),         // Write enable
-    .ena(1),         // RAM Enable, for additional power savings, disable port when not in use
-    .rsta(rst_in),       // Output reset (does not affect memory contents)
-    .regcea(1),   // Output register enable
-    .douta(sharp_color)      // RAM output data, width determined from RAM_WIDTH
+  xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(1),
+    .RAM_DEPTH(WIDTH*HEIGHT),
+    .INIT_FILE(`FPATH(image.mem)))
+    echo_buffer (
+    .addra(image_addr),
+    .clka(pixel_clk_in),
+    .wea(0),
+    .dina(0),
+    .ena(1),
+    .regcea(1),
+    .rsta(rst_in),
+    .douta(color),
+    .addrb(sharp_addr),
+    .dinb(0),
+    .clkb(pixel_clk_in),
+    .web(0),
+    .enb(1),
+    .rstb(rst_in),
+    .regceb(1),
+    .doutb(sharp_color)
   );
   
-  xilinx_single_port_ram_read_first #(
-    .RAM_WIDTH(24),                       // Specify RAM data width
-    .RAM_DEPTH(2),                     // Specify RAM depth (number of entries)
-    .RAM_PERFORMANCE("HIGH_PERFORMANCE"), // Select "HIGH_PERFORMANCE" or "LOW_LATENCY" 
-    .INIT_FILE(`FPATH(palette.mem))          // Specify name/location of RAM initialization file if using one (leave blank if not)
-  ) palette2 (
-    .addra(sharp_color[0]),     // Address bus, width determined from RAM_DEPTH
-    .dina(0),       // RAM input data, width determined from RAM_WIDTH
-    .clka(pixel_clk_in),       // Clock
-    .wea(0),         // Write enable
-    .ena(1),         // RAM Enable, for additional power savings, disable port when not in use
-    .rsta(rst_in),       // Output reset (does not affect memory contents)
-    .regcea(1),   // Output register enable
-    .douta(sharp_full_color)      // RAM output data, width determined from RAM_WIDTH
-  );
-  
-  assign red_out =    staff_lines ? 0 : full_color[23:16]&sharp_full_color[23:16];
-  assign green_out =  staff_lines ? 0 : full_color[15:8]&sharp_full_color[15:8];
-  assign blue_out =   staff_lines ? 0 : full_color[7:0]&sharp_full_color[7:0];
+  assign color_out = staff_lines ? 0 : 8'hff*(color & sharp_color);
 
 endmodule
 `default_nettype none

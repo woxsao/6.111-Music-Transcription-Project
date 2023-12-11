@@ -298,10 +298,10 @@ module top_level(
       .nf_out(new_frame),
       .fc_out(frame_count));
 
-  logic [7:0] red, green, blue;
+  logic [7:0] img_color;
 
   logic [159:0][5:0] notes;
-  //jonathan joestar's theme
+  /*//jonathan joestar's theme
   logic [159:0][5:0] joestar;
   jojo part1 (.jonathan(joestar));
 
@@ -309,7 +309,7 @@ module top_level(
   logic [159:0][5:0] rouse;
   rick astley(.ricky(rouse));
   
-  logic [159:0][5:0] data_notes;
+  logic [159:0][5:0] data_notes;*/
   logic [5:0] curr_note;
   
   note_lookup finding (.clk_in(clk_m),
@@ -322,55 +322,38 @@ module top_level(
                      .rst_in(sys_rst),
                      .toggle_in(sw[3]),
                      .note_in(curr_note),
-                     .notes_out(data_notes));
+                     .notes_out(notes));
 
-  always_comb begin
+  /*always_comb begin
     case(sw[1:0])
       2'b10: notes = joestar;
       2'b11: notes = rouse;
       default: notes = data_notes;
     endcase
-  end
+  end*/
 
   image_sprite #(
     .WIDTH(32),
-    .HEIGHT(100*13))
+    .HEIGHT(1100))
     com_sprite_m (
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst),
     .hcount_in(hcount),
     .vcount_in(vcount),
     .notes(notes),
-    .red_out(red),
-    .green_out(green),
-    .blue_out(blue));
+    .color_out(img_color));
 
-  logic [9:0] tmds_10b [0:2]; //output of each TMDS encoder!
-  logic tmds_signal [2:0]; //output of each TMDS serializer!
+  logic [9:0] tmds_10b; //output of each TMDS encoder!
+  logic [2:0] tmds_signal; //output of each TMDS serializer!
+  //logic hdmi_tx_p1, hdmi_tx_n1;
+  //assign hdmi_tx_p = hdmi_tx_p1*3'b111;
+  //assign hdmi_tx_n = hdmi_tx_n1*3'b111;
 
-  //three tmds_encoders (blue, green, red)
-  //blue should have {vert_sync and hor_sync for control signals)
-  //red and green have nothing
-  tmds_encoder tmds_red(
+  //one tmds encoder. whe only show black and white so we only need the blue one for the syncs
+  tmds_encoder tmds_all(
     .clk_in(clk_pixel),
     .rst_in(sys_rst),
-    .data_in(red),
-    .control_in(2'b0),
-    .ve_in(active_draw),
-    .tmds_out(tmds_10b[2]));
-
-  tmds_encoder tmds_green(
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst),
-    .data_in(green),
-    .control_in(2'b0),
-    .ve_in(active_draw),
-    .tmds_out(tmds_10b[1]));
-
-  tmds_encoder tmds_blue(
-    .clk_in(clk_pixel),
-    .rst_in(sys_rst),
-    .data_in(blue),
+    .data_in(img_color),
     .control_in({vert_sync,hor_sync}),
     .ve_in(active_draw),
     .tmds_out(tmds_10b[0]));
@@ -390,21 +373,21 @@ module top_level(
     .clk_pixel_in(clk_pixel),
     .clk_5x_in(clk_5x),
     .rst_in(sys_rst),
-    .tmds_in(tmds_10b[2]),
+    .tmds_in(tmds_10b),
     .tmds_out(tmds_signal[2]));
 
   tmds_serializer green_ser(
     .clk_pixel_in(clk_pixel),
     .clk_5x_in(clk_5x),
     .rst_in(sys_rst),
-    .tmds_in(tmds_10b[1]),
+    .tmds_in(tmds_10b),
     .tmds_out(tmds_signal[1]));
 
-  tmds_serializer blue_ser(
+  tmds_serializer all_ser(
     .clk_pixel_in(clk_pixel),
     .clk_5x_in(clk_5x),
     .rst_in(sys_rst),
-    .tmds_in(tmds_10b[0]),
+    .tmds_in(tmds_10b),
     .tmds_out(tmds_signal[0]));
 
   //output buffers generating differential signal:
