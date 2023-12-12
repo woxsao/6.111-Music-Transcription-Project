@@ -129,6 +129,7 @@ set_property IOSTANDARD LVCMOS33 [ get_ports "mic*"]
 #set_property PACKAGE_PIN B13 [ get_ports "spkl"]
 #set_property PACKAGE_PIN B14 [ get_ports "spkr"]
 #set_property IOSTANDARD LVCMOS33 [ get_ports "spk*"]
+set_property ALLOW_COMBINATORIAL_LOOPS TRUE [get_nets com_sprite_m/note_mem/hcount_out_reg[6]]
 
 set_property BITSTREAM.CONFIG.UNUSEDPIN PULLUP [current_design]
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]

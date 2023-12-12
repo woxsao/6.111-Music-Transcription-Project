@@ -298,7 +298,7 @@ module top_level(
 
   logic [7:0] img_color;
 
-  logic [159:0][5:0] notes;
+  //logic [159:0][5:0] notes;
   /*//jonathan joestar's theme
   logic [159:0][5:0] joestar;
   jojo part1 (.jonathan(joestar));
@@ -315,12 +315,6 @@ module top_level(
                        .bin_index(peak_out),
                        .ready_in(peak_valid_out),
                        .note_index(curr_note));
-  
-  note_write writer (.clk_in(clk_m),
-                     .rst_in(sys_rst),
-                     .toggle_in(sw[3]),
-                     .note_in(curr_note),
-                     .notes_out(notes));
 
   /*always_comb begin
     case(sw[1:0])
@@ -337,17 +331,14 @@ module top_level(
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst),
     .hcount_in(hcount),
+    .toggle_in(sw[3]),
+    .note_in(curr_note),
     .vcount_in(vcount),
-    .notes(notes),
     .color_out(img_color));
 
   logic [9:0] tmds_10b; //output of each TMDS encoder!
-  logic [2:0] tmds_signal; //output of each TMDS serializer!
-  //logic hdmi_tx_p1, hdmi_tx_n1;
-  //assign hdmi_tx_p = hdmi_tx_p1*3'b111;
-  //assign hdmi_tx_n = hdmi_tx_n1*3'b111;
+  logic tmds_signal [2:0];
 
-  //one tmds encoder. whe only show black and white so we only need the blue one for the syncs
   tmds_encoder tmds_all(
     .clk_in(clk_pixel),
     .rst_in(sys_rst),
@@ -356,7 +347,7 @@ module top_level(
     .ve_in(active_draw),
     .tmds_out(tmds_10b));
   
-  //1 tmds_serializer
+  //1 tmds_serializer(hopefully)
   tmds_serializer red_ser(
     .clk_pixel_in(clk_pixel),
     .clk_5x_in(clk_5x),
@@ -371,19 +362,40 @@ module top_level(
     .tmds_in(tmds_10b),
     .tmds_out(tmds_signal[1]));
 
-  tmds_serializer all_ser(
+  tmds_serializer blue_ser(
     .clk_pixel_in(clk_pixel),
     .clk_5x_in(clk_5x),
     .rst_in(sys_rst),
     .tmds_in(tmds_10b),
     .tmds_out(tmds_signal[0]));
 
+/*xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(1),
+    .RAM_DEPTH(1280*720))
+    pix_mem (
+    .addra(((720*vcount_in)+hcount_out)*active_draw),
+    .clka(clk_100mhz),
+    .wea(1),
+    .dina(img_color),
+    .ena(1),
+    .regcea(1),
+    .rsta(sys_rst),
+    .douta(),
+    .addrb(0),
+    .dinb(0),
+    .clkb(clk_100mhz),
+    .web(0),
+    .enb(0),
+    .rstb(sys_rst),
+    .regceb(0),
+    .doutb(0)
+  );*/
+
   //output buffers generating differential signal:
   OBUFDS OBUFDS_blue (.I(tmds_signal[0]), .O(hdmi_tx_p[0]), .OB(hdmi_tx_n[0]));
   OBUFDS OBUFDS_green(.I(tmds_signal[1]), .O(hdmi_tx_p[1]), .OB(hdmi_tx_n[1]));
   OBUFDS OBUFDS_red  (.I(tmds_signal[2]), .O(hdmi_tx_p[2]), .OB(hdmi_tx_n[2]));
   OBUFDS OBUFDS_clock(.I(clk_pixel), .O(hdmi_clk_p), .OB(hdmi_clk_n));
-
 endmodule // top_level
 
 //Volume Control

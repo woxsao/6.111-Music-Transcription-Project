@@ -15,14 +15,12 @@ module note_write(
             writing <= 0;
             eighth_dex <= 0;
             eighth_counter <= 0;
-            notes_out <= 0;
         end else begin
             if (~writing) begin
                 if (toggle_in) begin
                     writing <= 1;
                     eighth_dex <= 0;
                     eighth_counter <= 0;
-                    notes_out <= 0;
                 end
             end else begin
                 if (~toggle_in) begin
@@ -30,7 +28,7 @@ module note_write(
                     eighth_dex <= 0;
                     eighth_counter <= 0;
                 end else if (eighth_dex<160) begin
-                    if (eighth_counter >= 34816000) begin
+                    if (eighth_counter >= 37125000) begin
                         notes_out[eighth_dex] <= note_in;
                         eighth_dex <= eighth_dex + 1;
                         eighth_counter <= 0;
