@@ -5,11 +5,11 @@ cores:
     type: io
 
     inputs:
-      val1_in: 8
-      val2_in: 8
-      val3_in: 8
-      hcount: 11
+      val1_in: 16
+    outputs:
+      ready: 1
       vcount: 10
+      hcount: 11
 uart:
   port: "/dev/cu.usbserial-8874292301971"
   baudrate: 3000000

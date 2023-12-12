@@ -1,7 +1,7 @@
 `default_nettype none
 `timescale 1ns/1ps
 /*
-This module was generated with Manta v0.0.5 on 07 Dec 2023 at 23:40:42 by MonicaChan
+This module was generated with Manta v0.0.5 on 11 Dec 2023 at 17:05:18 by MonicaChan
 
 If this breaks or if you've got spicy formal verification memes, contact fischerm [at] mit.edu
 
@@ -17,10 +17,9 @@ manta manta_inst (
     .tx(tx),
     
     .val1_in(val1_in), 
-    .val2_in(val2_in), 
-    .val3_in(val3_in), 
-    .hcount(hcount), 
-    .vcount(vcount));
+    .ready(ready), 
+    .vcount(vcount), 
+    .hcount(hcount));
 
 */
 
@@ -30,11 +29,10 @@ module manta (
     input wire rx,
     output reg tx,
     
-    input wire [7:0] val1_in,
-    input wire [7:0] val2_in,
-    input wire [7:0] val3_in,
-    input wire [10:0] hcount,
-    input wire [9:0] vcount);
+    input wire [15:0] val1_in,
+    output reg ready,
+    output reg [9:0] vcount,
+    output reg [10:0] hcount);
 
 
     uart_rx #(.CLOCKS_PER_BAUD(33)) urx (
@@ -69,10 +67,9 @@ module manta (
     
         // ports
         .val1_in(val1_in),
-        .val2_in(val2_in),
-        .val3_in(val3_in),
-        .hcount(hcount),
+        .ready(ready),
         .vcount(vcount),
+        .hcount(hcount),
     
         // input port
         .addr_i(brx_lab8_io_core_addr),
@@ -325,11 +322,10 @@ module lab8_io_core (
     input wire user_clk,
 
     // ports
-    input wire [7:0] val1_in,
-    input wire [7:0] val2_in,
-    input wire [7:0] val3_in,
-    input wire [10:0] hcount,
-    input wire [9:0] vcount,
+    input wire [15:0] val1_in,
+    output reg ready,
+    output reg [9:0] vcount,
+    output reg [10:0] hcount,
 
     // input port
     input wire [15:0] addr_i,
@@ -349,18 +345,18 @@ module lab8_io_core (
     reg strobe = 0;
 
     // input probe buffers
-    reg [7:0] val1_in_buf = 0;
-    reg [7:0] val2_in_buf = 0;
-    reg [7:0] val3_in_buf = 0;
-    reg [10:0] hcount_buf = 0;
-    reg [9:0] vcount_buf = 0;
+    reg [15:0] val1_in_buf = 0;
 
     // output probe buffers
-    
+    reg ready_buf = 0;
+    reg [9:0] vcount_buf = 0;
+    reg [10:0] hcount_buf = 0;
 
     // output probe initial values
     initial begin
-        
+        ready = 0;
+        vcount = 0;
+        hcount = 0;
     end
 
     // synchronize buffers and probes on strobe
@@ -368,13 +364,11 @@ module lab8_io_core (
         if(strobe) begin
             // update input buffers from input probes
             val1_in_buf <= val1_in;
-            val2_in_buf <= val2_in;
-            val3_in_buf <= val3_in;
-            hcount_buf <= hcount;
-            vcount_buf <= vcount;
 
             // update output buffers from output probes
-            
+            ready <= ready_buf;
+            vcount <= vcount_buf;
+            hcount <= hcount_buf;
         end
     end
 
@@ -386,7 +380,7 @@ module lab8_io_core (
         valid_o <= valid_i;
 
         // check if address is valid
-        if( (valid_i) && (addr_i >= BASE_ADDR) && (addr_i <= BASE_ADDR + 5)) begin
+        if( (valid_i) && (addr_i >= BASE_ADDR) && (addr_i <= BASE_ADDR + 4)) begin
 
             // reads
             if(!rw_i) begin
@@ -394,10 +388,9 @@ module lab8_io_core (
                     BASE_ADDR + 0: data_o <= strobe;
 
                     BASE_ADDR + 1: data_o <= val1_in_buf;
-                    BASE_ADDR + 2: data_o <= val2_in_buf;
-                    BASE_ADDR + 3: data_o <= val3_in_buf;
+                    BASE_ADDR + 2: data_o <= ready_buf;
+                    BASE_ADDR + 3: data_o <= vcount_buf;
                     BASE_ADDR + 4: data_o <= hcount_buf;
-                    BASE_ADDR + 5: data_o <= vcount_buf;
                 endcase
             end
 
@@ -406,7 +399,9 @@ module lab8_io_core (
                 case (addr_i)
                     BASE_ADDR + 0: strobe <= data_i;
 
-                    
+                    BASE_ADDR + 2: ready_buf <= data_i;
+                    BASE_ADDR + 3: vcount_buf <= data_i;
+                    BASE_ADDR + 4: hcount_buf <= data_i;
                 endcase
             end
         end

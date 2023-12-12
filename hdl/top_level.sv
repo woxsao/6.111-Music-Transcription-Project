@@ -357,17 +357,37 @@ module top_level(
     .control_in({vert_sync,hor_sync}),
     .ve_in(active_draw),
     .tmds_out(tmds_10b[0]));
+  logic mantaready;
+  logic [10:0] hcount2;
+  logic [9:0] vcount2;
+  logic [15:0] img_color2;
+  logic [10:0] mantahcount;
+  logic [9:0] mantavcount;
+  logic [15:0] manta_img_color;
+  always_ff @(posedge clk_100_2)begin
+    //mantahcount <= hcount2;
+    //mantavcount <= vcount2;
+    manta_img_color <= img_color2;
+  end
+  mantahelper manta_helper(
+          .clk_in(clk_100_2),
+          .mantaready(mantaready),
+          .rst_in(sys_rst),
+          .vcount(mantavcount),
+          .hcount(mantahcount),
+          .color(img_color2),
+          .notes(notes)
+    );
   manta manta_inst (
-        .clk(clk_pixel),
-
+        .clk(clk_100_2),
         .rx(uart_rxd),
         .tx(uart_txd),
         
-        .val1_in(red), 
-        .val2_in(green), 
-        .val3_in(blue),
-        .hcount(hcount), 
-        .vcount(vcount));
+        .val1_in(manta_img_color),
+        .hcount(mantahcount),
+        .vcount(mantavcount),
+        .ready(mantaready));
+  
   //four tmds_serializers (blue, green, red, and clock)
   tmds_serializer red_ser(
     .clk_pixel_in(clk_pixel),
