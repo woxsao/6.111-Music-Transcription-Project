@@ -7,6 +7,7 @@ module note_lookup(
             input wire rst_in,
             input wire [12:0] bin_index,
             input wire ready_in,
+            output logic ready_out,
             output logic [5:0] note_index
   );
   
@@ -39,8 +40,8 @@ module note_lookup(
 
     logic [4:0] counter;
     logic [4:0] counter_minus;
-    assign counter_minus = counter -1;
     logic finding;
+    assign counter_minus = counter -1;
     always_ff @(posedge clk_in) begin
         if(rst_in)begin
             note_index <= 0;
@@ -50,20 +51,25 @@ module note_lookup(
         else begin
             if(bin_index<120) begin 
                 note_index <= 0;
+                finding <= 0;
+                ready_out <=0;
             end else begin
                 if(ready_in && ~finding)begin
                     counter <= 1;
                     finding <= 1'b1;
+                    ready_out <=0;
                 end
                 else if(finding)begin
                     if (counter > 21) begin
                         finding <= 0;
                         note_index <= 0;
                         counter <= 1;
+                        ready_out <=1;
                     end else begin
                         if (bin_index <= bin_floor[counter]) begin
                             note_index <= {1'b1,counter_minus};
                             finding <= 0;
+                            ready_out <= 1;
                         end
                         counter <= counter + 1;
                     end

@@ -105,7 +105,7 @@ module top_level(
   logic signed [15:0] dec4_out;
   logic dec4_out_ready;
   logic signed [15:0] fir4_out;
-  fir_decimator #(16,4) fir_dec4(.rst_in(sys_rst),
+  fir_decimator #(16,2) fir_dec4(.rst_in(sys_rst),
                         .audio_in(dec3_out),
                         .audio_sample_valid(dec3_out_ready),
                         .clk_in(clk_m),
@@ -311,12 +311,43 @@ module top_level(
   
   logic [159:0][5:0] data_notes;*/
   logic [5:0] curr_note;
+  logic note_ready;
   
   note_lookup finding (.clk_in(clk_m),
                        .rst_in(sys_rst),
                        .bin_index(peak_out),
                        .ready_in(peak_valid_out),
-                       .note_index(curr_note));
+                       .note_index(curr_note),
+                       .ready_out(note_ready));
+  logic new_note_ready;
+  logic [5:0] new_note_tone;
+  logic eighth_note;
+  logic quarter_note;
+  logic half_note;
+  logic whole_note;
+  logic eighth_rest;
+  logic quarter_rest;
+  logic half_rest;
+  logic whole_rest;
+  duration_detector #(60) durationdect (
+        .clk_in(clk_m),
+        .rst_in(sys_rst),
+        .note_index(curr_note),
+        .note_index_ready(peak_valid_out),
+        
+        .new_note_ready(note_ready),
+        .new_note_tone(new_note_tone),
+
+        .eighth_note(eighth_note),
+        .quarter_note(quarter_note),
+        .half_note(half_note),
+        .whole_note(whole_note),
+
+        .eighth_rest(eighth_rest),
+        .quarter_rest(quarter_rest),
+        .half_rest(half_rest),
+        .whole_rest(whole_rest)
+    );
 
   /*always_comb begin
     case(sw[1:0])
@@ -333,9 +364,10 @@ module top_level(
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst),
     .hcount_in(hcount),
-    .toggle_in(sw[3]),
+    .note_type({whole_rest,half_rest,quarter_rest,eighth_rest,whole_note,half_note,quarter_note,eighth_note}),
     .note_in(curr_note),
     .vcount_in(vcount),
+    .new_note_in(note_ready),
     .color_out(img_color));
 
   logic [9:0] tmds_10b; //output of each TMDS encoder!
@@ -348,6 +380,7 @@ module top_level(
     .control_in({vert_sync,hor_sync}),
     .ve_in(active_draw),
     .tmds_out(tmds_10b[0]));
+    
   logic mantaready;
   logic [10:0] hcount2;
   logic [9:0] vcount2;
@@ -360,7 +393,7 @@ module top_level(
     //mantavcount <= vcount2;
     manta_img_color <= img_color2;
   end
-  mantahelper manta_helper(
+  /*antahelper manta_helper(
           .clk_in(clk_100_2),
           .mantaready(mantaready),
           .rst_in(sys_rst),
@@ -377,7 +410,7 @@ module top_level(
         .val1_in(manta_img_color),
         .hcount(mantahcount),
         .vcount(mantavcount),
-        .ready(mantaready));
+        .ready(mantaready));*/
   
   //1 tmds_serializer(hopefully)
   tmds_serializer red_ser(
