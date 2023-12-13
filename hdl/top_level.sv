@@ -21,7 +21,7 @@ module top_level(
   );
   //assign led = sw; //for debugging
   //shut up those rgb LEDs (active high):
-  assign rgb1= 0;
+  assign rgb1[1:0]= 0;
   assign rgb0 = 0;
 
   logic sys_rst;
@@ -315,10 +315,9 @@ module top_level(
                        .rst_in(sys_rst),
                        .bin_index(peak_out),
                        .ready_in(peak_valid_out),
-                       .ready_out(note_ready),
                        .note_index(curr_note));
   
-  logic new_note_ready;
+  /*logic new_note_ready;
   logic [5:0] new_note_tone;
   logic eighth_note;
   logic quarter_note;
@@ -346,7 +345,7 @@ module top_level(
         .quarter_rest(quarter_rest),
         .half_rest(half_rest),
         .whole_rest(whole_rest)
-    );
+    );*/
 
   /*always_comb begin
     case(sw[1:0])
@@ -360,13 +359,14 @@ module top_level(
     .WIDTH(32),
     .HEIGHT(1100))
     com_sprite_m (
-    .pixel_clk_in(clk_pixel),
+    .pixel_clk_in(clk_m),
     .rst_in(sys_rst),
     .hcount_in(hcount),
-    .note_type({whole_rest,half_rest,quarter_rest,eighth_rest,whole_note,half_note,quarter_note,eighth_note}),
-    .note_in(new_note_tone),
+    .toggle_in(sw[2]),
+    .BPM(sw[1:0]),
+    .metronome(rgb1[2]),
+    .note_in(curr_note),
     .vcount_in(vcount),
-    .new_note_in(new_note_ready),
     .color_out(img_color));
 
   logic [9:0] tmds_10b; //output of each TMDS encoder!
@@ -401,28 +401,6 @@ module top_level(
     .rst_in(sys_rst),
     .tmds_in(tmds_10b),
     .tmds_out(tmds_signal[0]));
-
-/*xilinx_true_dual_port_read_first_2_clock_ram #(
-    .RAM_WIDTH(1),
-    .RAM_DEPTH(1280*720))
-    pix_mem (
-    .addra(((720*vcount_in)+hcount_out)*active_draw),
-    .clka(clk_100mhz),
-    .wea(1),
-    .dina(img_color),
-    .ena(1),
-    .regcea(1),
-    .rsta(sys_rst),
-    .douta(),
-    .addrb(0),
-    .dinb(0),
-    .clkb(clk_100mhz),
-    .web(0),
-    .enb(0),
-    .rstb(sys_rst),
-    .regceb(0),
-    .doutb(0)
-  );*/
 
   //output buffers generating differential signal:
   OBUFDS OBUFDS_blue (.I(tmds_signal[0]), .O(hdmi_tx_p[0]), .OB(hdmi_tx_n[0]));
