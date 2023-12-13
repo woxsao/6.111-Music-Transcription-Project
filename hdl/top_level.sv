@@ -309,12 +309,44 @@ module top_level(
   
   logic [159:0][5:0] data_notes;*/
   logic [5:0] curr_note;
+  logic note_ready;
   
   note_lookup finding (.clk_in(clk_m),
                        .rst_in(sys_rst),
                        .bin_index(peak_out),
                        .ready_in(peak_valid_out),
+                       .ready_out(note_ready),
                        .note_index(curr_note));
+  
+  logic new_note_ready;
+  logic [5:0] new_note_tone;
+  logic eighth_note;
+  logic quarter_note;
+  logic half_note;
+  logic whole_note;
+  logic eighth_rest;
+  logic quarter_rest;
+  logic half_rest;
+  logic whole_rest;
+  duration_detector #(60) durationdect (
+        .clk_in(clk_m),
+        .rst_in(sys_rst),
+        .note_index(curr_note),
+        .note_index_ready(note_ready),
+        
+        .new_note_ready(new_note_ready),
+        .new_note_tone(new_note_tone),
+
+        .eighth_note(eighth_note),
+        .quarter_note(quarter_note),
+        .half_note(half_note),
+        .whole_note(whole_note),
+
+        .eighth_rest(eighth_rest),
+        .quarter_rest(quarter_rest),
+        .half_rest(half_rest),
+        .whole_rest(whole_rest)
+    );
 
   /*always_comb begin
     case(sw[1:0])
@@ -331,9 +363,10 @@ module top_level(
     .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst),
     .hcount_in(hcount),
-    .toggle_in(sw[3]),
-    .note_in(curr_note),
+    .note_type({whole_rest,half_rest,quarter_rest,eighth_rest,whole_note,half_note,quarter_note,eighth_note}),
+    .note_in(new_note_tone),
     .vcount_in(vcount),
+    .new_note_in(new_note_ready),
     .color_out(img_color));
 
   logic [9:0] tmds_10b; //output of each TMDS encoder!
