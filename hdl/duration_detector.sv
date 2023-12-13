@@ -10,7 +10,7 @@ module duration_detector #(
 
     output logic new_note_ready,
     output logic [5:0] new_note_tone,
-    
+
     output logic eighth_note,
     output logic quarter_note,
     output logic half_note,
@@ -46,9 +46,10 @@ module duration_detector #(
             last_tone <= note_index;
             if(note_index != last_tone)begin
                 counter <= 0;
+                new_note_ready <= 1;
                 new_note_tone <= last_tone;
                 if(counter >= SIG_PER_WHOLE)begin //whole note or rest
-                    new_note_ready <= 1;
+                    //new_note_ready <= 1;
                     if(last_tone == 0)begin //rest
                         whole_rest <= 1;
                     end
@@ -57,7 +58,7 @@ module duration_detector #(
                     end
                 end
                 else if(counter >= SIG_PER_HALF)begin //half note or rest
-                    new_note_ready <= 1;
+                    //new_note_ready <= 1;
                     if(last_tone == 0)begin //rest
                         half_rest <= 1;
                     end
@@ -66,7 +67,7 @@ module duration_detector #(
                     end
                 end
                 else if (counter >= SIG_PER_QUARTER) begin //quarter note or rest
-                    new_note_ready <= 1;
+                    //new_note_ready <= 1;
                     if(last_tone == 0)begin //rest
                         quarter_rest <= 1;
                     end
@@ -75,7 +76,7 @@ module duration_detector #(
                     end
                 end
                 else if (counter >= SIG_PER_EIGHTH) begin //eighth note or rest
-                    new_note_ready <= 1;
+                    //new_note_ready <= 1;
                     if(last_tone == 0)begin //rest
                         eighth_rest <= 1;
                     end
