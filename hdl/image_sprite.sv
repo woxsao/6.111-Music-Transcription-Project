@@ -10,6 +10,7 @@
 module image_sprite #(
   parameter WIDTH=32, HEIGHT=100*11) (
   input wire pixel_clk_in,
+  input wire clk_2,
   input wire rst_in,
   input wire [10:0] hcount_in,
   input wire [9:0] vcount_in,
@@ -40,7 +41,7 @@ module image_sprite #(
   assign metronome = writing && (eighth_counter <= 200000);
   logic [4:0] block;//32 sprite wide pieces of a staff line
   logic [2:0] system;//5 staff lines
-  always_ff @(posedge pixel_clk_in) begin
+  always_ff @(posedge clk_2) begin
         if (rst_in) begin
             writing <= 0;
             eighth_dex <= 0;
@@ -52,7 +53,7 @@ module image_sprite #(
           if (real_smooth<19) begin
             new_note <= 1;
             eighth_dex <= eighth_dex + 8;
-            real_smooth <= real_smooth + 1;
+            real_smooth <= real_smooth +1;
           end else begin
             new_note <= 0;
             eighth_dex <= 0;
@@ -103,7 +104,7 @@ module image_sprite #(
     .RAM_DEPTH(20))
     note_mem (
     .addra(eighth_dex[7:3]),
-    .clka(pixel_clk_in),
+    .clka(clk_2),
     .wea(new_note),
     .dina(writ_measure),
     .ena(1),
@@ -116,7 +117,7 @@ module image_sprite #(
     .clkb(pixel_clk_in),
     .web(0),
     .enb(1),
-    .rstb(back_now_yall),
+    .rstb(),
     .regceb(1),
     .doutb(curr_measure)
   );
@@ -187,8 +188,8 @@ module image_sprite #(
   logic show_note, show_acc;
   logic clef;
 
-  assign block = (hcount_in-128)>>5;
-  assign system = (vcount_in-100)/25>>2;
+  //assign block = (hcount_in-128)>>5;
+  //assign system = (vcount_in-100)/25>>2;
 
   assign image_addr = (show_note)? {frame,5'b0000}+{(vcount_in%100),5'b0000}+(hcount_in[4:0])+dis : (clef)? 32000+{(vcount_in%100),5'b0000}+(hcount_in[4:0]) : 0;
   assign sharp_addr = (show_acc && show_note)? 25600+sframe+{(vcount_in%100),5'b0000}+(hcount_in[4:0])+dis : 0;
@@ -201,6 +202,8 @@ module image_sprite #(
         show_note = 0;
       end else begin
         clef = 0;
+        block = (hcount_in-128)>>5;
+        system = (vcount_in-100)/25>>2;
         if (curr_measure[block[2:0]][5]==0) begin//rests
           show_acc = 0;
           if(block%8==0) begin//1

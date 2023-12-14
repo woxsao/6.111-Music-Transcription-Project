@@ -48,6 +48,7 @@ module top_level(
                       .rst_in(sys_rst),
                       .dirty_in(btn[1]),
                       .clean_out(record));
+  
 
   //logic for controlling PDM associated modules:
   logic [8:0] m_clock_counter; //used for counting for mic clock generation
@@ -58,6 +59,8 @@ module top_level(
   //logic for interfacing with the microphone and generating 3.072 MHz signals
   logic [7:0] pdm_tally;
   logic [8:0] pdm_counter;
+
+
 
   logic pdm_out;
   pdm uut
@@ -316,36 +319,6 @@ module top_level(
                        .bin_index(peak_out),
                        .ready_in(peak_valid_out),
                        .note_index(curr_note));
-  
-  /*logic new_note_ready;
-  logic [5:0] new_note_tone;
-  logic eighth_note;
-  logic quarter_note;
-  logic half_note;
-  logic whole_note;
-  logic eighth_rest;
-  logic quarter_rest;
-  logic half_rest;
-  logic whole_rest;
-  duration_detector #(60) durationdect (
-        .clk_in(clk_m),
-        .rst_in(sys_rst),
-        .note_index(curr_note),
-        .note_index_ready(note_ready),
-        
-        .new_note_ready(new_note_ready),
-        .new_note_tone(new_note_tone),
-
-        .eighth_note(eighth_note),
-        .quarter_note(quarter_note),
-        .half_note(half_note),
-        .whole_note(whole_note),
-
-        .eighth_rest(eighth_rest),
-        .quarter_rest(quarter_rest),
-        .half_rest(half_rest),
-        .whole_rest(whole_rest)
-    );*/
 
   /*always_comb begin
     case(sw[1:0])
@@ -359,10 +332,11 @@ module top_level(
     .WIDTH(32),
     .HEIGHT(1100))
     com_sprite_m (
-    .pixel_clk_in(clk_m),
+    .pixel_clk_in(clk_pixel),
     .rst_in(sys_rst),
     .hcount_in(hcount),
     .toggle_in(sw[2]),
+    .clk_2(clk_m),
     .BPM(sw[1:0]),
     .metronome(rgb1[2]),
     .note_in(curr_note),
