@@ -109,7 +109,7 @@ module image_sprite #(
     .dina(writ_measure),
     .ena(1),
     .regcea(1),
-    .rsta(back_now_yall),
+    .rsta(),
     .douta(),
     
     .addrb({system,block[4:3]}),
@@ -156,7 +156,7 @@ module image_sprite #(
   logic show_sharp;
   logic show_natural;
   logic found;
-  always_comb begin
+  /*always_comb begin
     if (sharp || nat) begin
       found = 0;
       for (integer i=0;i<8;i=i+1) begin
@@ -181,7 +181,7 @@ module image_sprite #(
         end
       end
     end else begin show_sharp = 0; show_natural = 0; end
-  end
+  end*/
 
   logic [$clog2(WIDTH*HEIGHT)-1:0] frame;
   logic [$clog2(WIDTH*HEIGHT)-1:0] sframe;
@@ -192,8 +192,8 @@ module image_sprite #(
   //assign system = (vcount_in-100)/25>>2;
 
   assign image_addr = (show_note)? {frame,5'b0000}+{(vcount_in%100),5'b0000}+(hcount_in[4:0])+dis : (clef)? 32000+{(vcount_in%100),5'b0000}+(hcount_in[4:0]) : 0;
-  assign sharp_addr = (show_acc && show_note)? 25600+sframe+{(vcount_in%100),5'b0000}+(hcount_in[4:0])+dis : 0;
-
+  //assign sharp_addr = (show_acc && show_note)? 25600+sframe+{(vcount_in%100),5'b0000}+(hcount_in[4:0])+dis : 0;
+  assign sharp_addr = (sharp)? 28800+{(vcount_in%100),5'b0000}+(hcount_in[4:0])+dis : 0;
   always_comb begin //duration detector & memory adressing
     if (in_staff) begin
       if (hcount_in<128) begin//treble clef
